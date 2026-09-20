@@ -21,7 +21,7 @@ export const signUp = async (email: string, password: string , phoneNumber?: str
         throw new Error("Email and password are required");
     }
 
-    const {data, error} = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -33,13 +33,14 @@ export const signUp = async (email: string, password: string , phoneNumber?: str
         },
     })
 
-    if (error || !data){
-        throw new Error("Sign up failed. Please contact the support");
+    if (error) {
+        throw new Error(error.message);
     }
 
-    else {
-        return data;
+    if (!data.user) {
+        throw new Error("Account creation did not return a user.");
     }
 
+    return data;
 
 };

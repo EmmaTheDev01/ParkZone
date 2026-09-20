@@ -31,6 +31,7 @@ const SignUp = () =>{
     const [checked, setChecked] = useState(false);
 
     const [Successmsg, setSuccessmsg] = useState<string | null>(null);
+    const [isSigningUp, setIsSigningUp] = useState(false);
 
     const [passwordlenght, setPasswordLength] = useState(false);
 
@@ -76,13 +77,17 @@ const SignUp = () =>{
             }
 
         try {
-
-
+            setIsSigningUp(true);
             await signUp(email, password, phoneNumber);
             setSignUpError(null);
             router.push("/(auth)/succesfully");
         } catch (error) {
-            setSignUpError("Error occurred during sign up");
+            const message = error instanceof Error
+                ? error.message
+                : "Unable to create your account. Please try again.";
+            setSignUpError(message);
+        } finally {
+            setIsSigningUp(false);
         }
     };
     return(
@@ -228,8 +233,8 @@ const SignUp = () =>{
 
                         <TouchableOpacity className="sign-up-button" 
                         onPress={handleSignUp}
-                        disabled={!checked}>
-                            <Text className="create-account-text">Create my Account</Text>
+                        disabled={!checked || isSigningUp}>
+                            <Text className="create-account-text">{isSigningUp ? "Creating Account..." : "Create my Account"}</Text>
                         </TouchableOpacity>
 
                     </View>
