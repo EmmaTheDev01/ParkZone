@@ -34,6 +34,12 @@ export const signUp = async (email: string, password: string , phoneNumber?: str
     })
 
     if (error) {
+        if (error.message.toLowerCase().includes("confirmation email")) {
+            throw new Error(
+                "We could not send the confirmation email. Configure an SMTP provider in Supabase Auth, then try again."
+            );
+        }
+
         throw new Error(error.message);
     }
 
