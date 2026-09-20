@@ -901,7 +901,7 @@
     flex: 1;
     align-items: center;
     justify-content: center;
-    background-color: #f5fbf7;
+    background-color: #ffffff;
 }
 
 .success-content {
@@ -918,8 +918,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 38px;
-    background-color: #22c55e;
-    shadow-color: #166534;
+    background-color: #1f2937;
+    shadow-color: #111827;
     shadow-opacity: 0.2;
     shadow-radius: 12px;
     elevation: 6;
@@ -933,7 +933,7 @@
 
 .success-eyebrow {
     margin-top: 28px;
-    color: #15803d;
+    color: #1f2937;
     font-size: 13px;
     font-weight: bold;
     letter-spacing: 2px;
@@ -941,7 +941,7 @@
 
 .success-text {
     margin-top: 8px;
-    color: #14532d;
+    color: #0f172a;
     font-size: 32px;
     font-weight: bold;
     text-align: center;

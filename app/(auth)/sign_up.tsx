@@ -5,7 +5,7 @@ import { Icons } from "../../constants/icons";
 import { router } from "expo-router/build/exports";
 import { NumberLimit, password_regex, empty_field, email_regex } from ".././lib/auth";
 import { useState } from "react";
-import { signUp } from ".././services/auth";
+import { signUp, checkUserExists } from ".././services/auth";
 
 
 
@@ -26,7 +26,7 @@ const SignUp = () =>{
     const [passErrorMsg, setPassErrorMsg] = useState<string | null>(null);
     const [confirmPassErrorMsg, setConfirmPassErrorMsg] = useState<string | null>(null);
     const [emptyField, setEmptyField] = useState<string | null>(null);
-
+    const [checkUserError, setCheckUserError] = useState<string | null>(null);
     const [signUpError, setSignUpError] = useState<string | null>(null);
     const [checked, setChecked] = useState(false);
 
@@ -34,6 +34,7 @@ const SignUp = () =>{
     const [isSigningUp, setIsSigningUp] = useState(false);
 
     const [passwordlenght, setPasswordLength] = useState(false);
+
 
     const verficationpass=(text: string) =>{
 
@@ -78,6 +79,7 @@ const SignUp = () =>{
 
         try {
             setIsSigningUp(true);
+            await checkUserExists(phoneNumber);
             await signUp(email, password, phoneNumber);
             setSignUpError(null);
             router.push("/(auth)/succesfully");

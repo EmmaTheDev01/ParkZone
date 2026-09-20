@@ -1,3 +1,4 @@
+import { Alert } from "react-native";
 import { supabase } from "../lib/supabase";
 
  
@@ -32,11 +33,10 @@ export const signUp = async (email: string, password: string , phoneNumber?: str
            
         },
     })
-
     if (error) {
         if (error.message.toLowerCase().includes("confirmation email")) {
             throw new Error(
-                "We could not send the confirmation email. Configure an SMTP provider in Supabase Auth, then try again."
+                "We could not send the confirmation email"
             );
         }
 
@@ -47,6 +47,28 @@ export const signUp = async (email: string, password: string , phoneNumber?: str
         throw new Error("Account creation did not return a user.");
     }
 
+
     return data;
 
 };
+
+
+export const checkUserExists = async (phoneNumber: string)=>{
+
+    const { data, error } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("phone_number", phoneNumber.trim())
+        .limit(1);
+
+    if (error) {
+        throw new Error("Error checking user. Please try again later.");
+    }
+
+    if (data.length > 0) {
+        throw new Error("User with this phone number already exists. Please use a different phone number.");
+    }
+
+    return false;
+
+}
