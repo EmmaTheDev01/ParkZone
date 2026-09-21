@@ -24,7 +24,7 @@
  const otp_regex = (otp) => {
 
     try{
-        const OtpRegex = /^[0-9]{6}$/ || /\b\d{6}\b/;
+        const OtpRegex = /^[0-9]{6}$/;
         if (!OtpRegex.test(otp)) {
             return "Invalid OTP format. Please enter a 6-digit OTP.";
         }
