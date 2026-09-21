@@ -83,10 +83,21 @@ const ForgotPassword = () => {
 
 
         const handleChangeText = (text: string, index: number) => {
+                const digits = text.replace(/\D/g, "");
                 const newOtp = [...otp];
-                newOtp[index] = text;
+
+                if (digits.length > 1) {
+                        digits.slice(0, 6 - index).split("").forEach((digit, offset) => {
+                                newOtp[index + offset] = digit;
+                        });
+                        setOtp(newOtp);
+                        inputRefs.current[Math.min(index + digits.length, 5)]?.focus();
+                        return;
+                }
+
+                newOtp[index] = digits;
                 setOtp(newOtp);
-                if (text && index < 5) {
+                if (digits && index < 5) {
                         inputRefs.current[index + 1]?.focus();
                 }
         };
@@ -321,7 +332,7 @@ const ForgotPassword = () => {
                                                                                         ref={(ref) => { inputRefs.current[index] = ref; }}
                                                                                         className={digitClasses[index]}
                                                                                         keyboardType="numeric"
-                                                                                        maxLength={1}
+                                                                                        maxLength={index === 0 ? 6 : 1}
                                                                                         value={digit}
                                                                                         onChangeText={(text) => handleChangeText(text, index)}
                                                                                         onKeyPress={(e) => handleKeyPress(e, index)}
