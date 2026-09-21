@@ -1,4 +1,4 @@
-import { router } from "expo-router/build/exports";
+import { router } from "expo-router";
 import { Image, TouchableOpacity } from "react-native";
 import React, { useState } from "react";
 import {

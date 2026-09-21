@@ -23,23 +23,32 @@ async function verifySignupOtp(email, token) {
 
 
 async function recoveryPassword(email) {
-  const { data, error } = await supabase.auth.resetPasswordForEmail(email)
+  try {
+    const { data, error } = await supabase.functions.invoke("send-otp-email", {
+      body: { email: email.trim().toLowerCase(), type: "recovery" },
+    });
+    if (!error && data?.success) {
+      return data;
+    }
+  } catch (err) {
+    console.warn("Edge function fallback to auth.resetPasswordForEmail:", err);
+  }
 
-  if (error) throw error
-  return data
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase());
+  if (error) throw error;
+  return data;
 }
 
 
 async function verfiyRecoveryOtp(email, token){
-
   const { data, error } = await supabase.auth.verifyOtp({
-    email: email,
-    token: token,
+    email: email.trim().toLowerCase(),
+    token: token.trim(),
     type: 'recovery',
-  })
+  });
 
-  if (error) throw error
-  return data
+  if (error) throw error;
+  return data;
 }
 
 async function resendotp(email, flowType) {
@@ -53,4 +62,15 @@ async function resendotp(email, flowType) {
 }
 
 
-export { signUpWithPassword, verifySignupOtp, resendotp, recoveryPassword, verfiyRecoveryOtp };
+const sendPasswordResetOtp = recoveryPassword;
+const verifyRecoveryOtp = verfiyRecoveryOtp;
+
+export {
+  signUpWithPassword,
+  verifySignupOtp,
+  resendotp,
+  recoveryPassword,
+  verfiyRecoveryOtp,
+  sendPasswordResetOtp,
+  verifyRecoveryOtp,
+};
