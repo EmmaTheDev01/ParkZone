@@ -1,35 +1,119 @@
-import React from "react";
-import { useState } from "react";
-import { TextInput, View, Button, StyleSheet, Image, Text } from "react-native";
+import React, { useState } from "react";
+import { View, Text, TextInput, TouchableOpacity, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { TouchableOpacity } from "react-native"; 
+import { router } from "expo-router";
+import { Icons } from "../../constants/icons";
+import { password_regex, empty_field } from "../lib/auth";
+import { updatePassword } from "../services/auth";
 
- const NewPassword = () => {
+const NewPassword = () => {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
+  const handleResetPassword = async () => {
+    const emptyErr = empty_field(newPassword) || empty_field(confirmPassword);
+    if (emptyErr) {
+      setErrorMsg("Please fill in both password fields.");
+      return;
+    }
 
+    const passRegexErr = password_regex(newPassword);
+    if (passRegexErr) {
+      setErrorMsg(passRegexErr);
+      return;
+    }
 
-    return(
-    <SafeAreaView className="auth-screen">
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please re-enter.");
+      return;
+    }
 
+    setIsLoading(true);
+    setErrorMsg(null);
 
-        <View className="forgot-password-container">
-        <TextInput placeholder="Enter New Password" secureTextEntry={true} className="forgot-password-input" />
-        <TextInput placeholder="Confirm New Password" secureTextEntry={true} className="forgot-password-input" />
+    try {
+      await updatePassword(newPassword);
+      setSuccessMsg("Password updated successfully!");
+      setTimeout(() => {
+        router.replace("/(auth)/sign_in");
+      }, 1500);
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to update password. Please try again.";
+      setErrorMsg(message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <SafeAreaView className="auth-screen forgot-password-screen">
+      <View className="auth-content">
+        <View className="arrow-back">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Image className="arrow-icon" source={Icons.arrowBack} />
+          </TouchableOpacity>
         </View>
 
-         <View className="forgot-button-container">
-            <TouchableOpacity className="forgot-button">
-                <Text className="forgot-button-text">Confirm New Password</Text>
-            </TouchableOpacity>
+        <View className="forgot-password-page-container">
+          <Text className="forgot-password-title">Create New Password</Text>
+          <View className="forgot-password-subtext-container">
+            <Text className="forgot-password-subtext">
+              Your new password must be different from previous used passwords.
+            </Text>
+          </View>
         </View>
+
+        <View className="forgot-password-action-container">
+          <Text className="forgot-password-action-text">New Password</Text>
+          <TextInput
+            className="forgot-password-input"
+            placeholder="Enter new password"
+            secureTextEntry
+            value={newPassword}
+            onChangeText={(text) => {
+              setNewPassword(text);
+              setErrorMsg(null);
+            }}
+          />
+          <Image className="email-icon" source={Icons.lockIcon} />
+        </View>
+
+        <View className="forgot-password-action-container" style={{ marginTop: 16 }}>
+          <Text className="forgot-password-action-text">Confirm Password</Text>
+          <TextInput
+            className="forgot-password-input"
+            placeholder="Confirm new password"
+            secureTextEntry
+            value={confirmPassword}
+            onChangeText={(text) => {
+              setConfirmPassword(text);
+              setErrorMsg(null);
+            }}
+          />
+          <Image className="email-icon" source={Icons.locksIcon} />
+        </View>
+
+        {successMsg && <Text className="success-text">{successMsg}</Text>}
+        {errorMsg && <Text className="error-text">{errorMsg}</Text>}
+
+        <View className="forgot-password-submit-container">
+          <TouchableOpacity
+            className="forgot-password-submit-button"
+            onPress={handleResetPassword}
+            disabled={isLoading}
+          >
+            <Text className="forgot-password-submit-button-text">
+              {isLoading ? "Updating..." : "Reset Password"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </SafeAreaView>
-
-    )
-
-
-
-
- };
-
+  );
+};
 
 export default NewPassword;

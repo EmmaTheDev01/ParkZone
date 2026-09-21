@@ -33,6 +33,7 @@ yarn-error.*
 # local env files
 .env
 .env.*
+!.env.example
 .env*.local
 !.env.example
 
@@ -42,3 +43,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# supabase
+supabase/.temp/
+
