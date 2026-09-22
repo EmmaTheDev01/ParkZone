@@ -21,6 +21,35 @@
 
 
 
+ const passVerfication = (password) => {
+
+
+                if (password.length < 8){
+
+                    throw new Error("Password must be at least 8 characters long.");
+                }
+
+                else if (!/[A-Z]/.test(password)) {
+                    throw new Error("Password must contain at least 1 uppercase letter.");
+                }
+                else if (!/[a-z]/.test(password)) {
+                    throw new Error("Password must contain at least 1 lowercase letter.");
+                }
+                else if (!/\d/.test(password)) {
+                    throw new Error("Password must contain at least 1 number.");
+                }
+                else if (!/[@$!%*?&]/.test(password)) {
+                    throw new Error("Password must contain at least 1 special character.");
+                }
+
+                  else {
+
+                    return;
+                  }
+
+        
+ }
+
  const otp_regex = (otp) => {
 
     try{
@@ -100,5 +129,5 @@
     }
  }
 
- export { NumberLimit, email_regex, password_regex, empty_field, otp_regex };
+ export { NumberLimit, email_regex, password_regex, empty_field, otp_regex, passVerfication };
 

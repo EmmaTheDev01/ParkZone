@@ -14,9 +14,7 @@ export const signIn = async (phoneNumber: string, password: string) => {
     });
 };
 
-/**
- * Sends a welcome email to newly registered users via the Resend Edge Function
- */
+
 export const sendWelcomeEmail = async (email: string, name?: string) => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) return;
@@ -94,10 +92,7 @@ export const checkUserExists = async (phoneNumber: string) => {
     return false;
 };
 
-/**
- * Sends a password reset OTP email using the 'send-otp-email' Edge Function (via Resend),
- * with graceful fallback to Supabase's built-in resetPasswordForEmail.
- */
+
 export const sendPasswordResetOtp = async (email: string) => {
     const normalizedEmail = email.trim().toLowerCase();
     if (!normalizedEmail) {
@@ -136,9 +131,7 @@ export const sendPasswordResetOtp = async (email: string) => {
     };
 };
 
-/**
- * Verifies the 6-digit recovery OTP for the given email
- */
+
 export const verifyRecoveryOtp = async (email: string, token: string) => {
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedToken = token.trim();
@@ -160,9 +153,8 @@ export const verifyRecoveryOtp = async (email: string, token: string) => {
     return data;
 };
 
-/**
- * Updates the user's password once verified
- */
+
+
 export const updatePassword = async (newPassword: string) => {
     if (!newPassword || newPassword.length < 8) {
         throw new Error("Password must be at least 8 characters long.");
@@ -178,3 +170,4 @@ export const updatePassword = async (newPassword: string) => {
 
     return data;
 };
+

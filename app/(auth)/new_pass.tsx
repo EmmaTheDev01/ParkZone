@@ -6,17 +6,24 @@ import { Icons } from "../../constants/icons";
 import { password_regex, empty_field } from "../lib/auth";
 import { updatePassword } from "../services/auth";
 
+
 const NewPassword = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isPasswordValid = password_regex(newPassword) === null;
 
   const handleResetPassword = async () => {
     const emptyErr = empty_field(newPassword) || empty_field(confirmPassword);
     if (emptyErr) {
       setErrorMsg("Please fill in both password fields.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("Passwords do not match. Please re-enter.");
       return;
     }
 
@@ -26,19 +33,13 @@ const NewPassword = () => {
       return;
     }
 
-    if (newPassword !== confirmPassword) {
-      setErrorMsg("Passwords do not match. Please re-enter.");
-      return;
-    }
-
     setIsLoading(true);
     setErrorMsg(null);
 
     try {
       await updatePassword(newPassword);
-      setSuccessMsg("Password updated successfully!");
       setTimeout(() => {
-        router.replace("/(auth)/sign_in");
+        router.replace("/(auth)/change_succesfully");
       }, 1500);
     } catch (err: unknown) {
       const message =
@@ -94,20 +95,41 @@ const NewPassword = () => {
               setErrorMsg(null);
             }}
           />
-          <Image className="email-icon" source={Icons.locksIcon} />
+          <Image className="email-icon" source={Icons.lockIcon} />
         </View>
 
-        {successMsg && <Text className="success-text">{successMsg}</Text>}
-        {errorMsg && <Text className="error-text">{errorMsg}</Text>}
+        {errorMsg && <Text className="new-password-error-text">{errorMsg}</Text>}
 
-        <View className="forgot-password-submit-container">
+        <View className="verfication-container-password">
+          <Text
+            className={`password-verification-text_a ${isPasswordValid ? "password-verfication-valid" : "password-verfication-invalid"}`}
+          >
+            Password must contain at least 8 characters
+          </Text>
+          <Text
+            className={`password-verification-text_b ${isPasswordValid ? "password-verfication-valid" : "password-verfication-invalid"}`}
+          >
+            Password must contain at least 1 uppercase letter and lowercase
+          </Text>
+          <Text
+            className={`password-verification-text_c ${isPasswordValid ? "password-verfication-valid" : "password-verfication-invalid"}`}
+          >
+            Password must contain at least 1 special character
+          </Text>
+        </View>
+          
+
+        {successMsg && <Text className="success-text">{successMsg}</Text>}
+
+        <View className="new-password-submit-container">
           <TouchableOpacity
             className="forgot-password-submit-button"
             onPress={handleResetPassword}
             disabled={isLoading}
+            
           >
             <Text className="forgot-password-submit-button-text">
-              {isLoading ? "Updating..." : "Reset Password"}
+              {isLoading ? "Updating..." : "Change Password"}
             </Text>
           </TouchableOpacity>
         </View>

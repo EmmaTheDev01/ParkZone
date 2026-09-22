@@ -400,6 +400,13 @@
     margin-top: -10px;
 }
 
+.new-password-error-text {
+    color: red;
+    font-size: 12px;
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+
 .field-error-container {
     min-height: 22px;
 }
@@ -635,11 +642,6 @@
 }
 
 
-.forgot-password-submit-container{
-    align-items: center;
-    justify-content: center;
-    margin-top:450px;
-}
 
 
 .arrow-back{
@@ -979,3 +981,60 @@
 }
 
 
+.forgot-password-submit-button{
+    width: 100%;
+    height: 52px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background-color:#1f2937 ;
+
+}
+.forgot-password-submit-button-text{
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+
+.forgot-password-submit-container{
+    align-items: center;
+    justify-content: center;
+    margin-top: 450px;
+}
+
+
+.new-password-submit-container{
+    align-items: center;
+    justify-content: center;
+    margin-top:250px;
+}
+
+
+
+
+.verfication-container-password{
+    width: 100%;
+    margin-top: 10px;
+}
+
+
+
+.password-verification-text_a,
+.password-verification-text_b,
+.password-verification-text_c {
+    font-size: 14px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+
+.password-verfication-valid{
+
+    color: #22c55e; 
+
+}
+
+.password-verfication-invalid{
+    color: #ef4444; 
+}
