@@ -71,3 +71,7 @@ export {
   verifyRecoveryOtp,
   verfiyRecoveryOtp,
 };
+
+export default function () {
+  return null;
+}

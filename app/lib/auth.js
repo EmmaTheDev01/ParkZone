@@ -132,3 +132,7 @@
  const passVerification = passVerfication;
  export { NumberLimit, email_regex, password_regex, empty_field, otp_regex, passVerfication, passVerification };
 
+ export default function () {
+   return null;
+ }
+
