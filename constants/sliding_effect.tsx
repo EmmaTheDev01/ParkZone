@@ -54,6 +54,17 @@ export const dotseffect = (index = 0) => {
   ] as const;
 
 
+
+
+  const newsData =  [
+    {id: 1, title: "New App Available in App Store", description: "Please share the news about our new app."},
+    {id: 2, title: "Parking App Update", description: "Our parking app has been updated with new features."},
+    {id: 3, title: "Try our new App", description: "Give us a feedback for our new updated App ."}
+  ] as const;
+
+
+
+
   export const SlidingEffectIcons = (index=0) => {
 
         const [currentIcon, setCurrentIcon] = useState(ImgIcons[index]);
@@ -85,3 +96,6 @@ export const dotseffect = (index = 0) => {
 
 
   }
+
+
+  export {newsData, ImgIcons}

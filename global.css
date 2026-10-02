@@ -1241,3 +1241,33 @@
     height: 25px;
     tint-color: #ffffff;
 }
+
+
+
+
+.news-row{
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+
+
+.news-title{
+    font-size: 15px;
+    font-weight: bold;
+    color: #1f2937;
+}
+
+.view-more-text{
+    font-size: 13px;
+    font-weight: bold;
+    color: #1f2937;
+    text-decoration: underline;
+    margin-right: 27px;
+}
+
+
+.news-list{}

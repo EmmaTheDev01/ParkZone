@@ -59,7 +59,7 @@ async function resendotp(email, flowType) {
   return data;
 }
 
-// Aliases for compatibility with Kais's initial implementation
+
 const verfiyRecoveryOtp = verifyRecoveryOtp;
 
 export {
@@ -71,7 +71,3 @@ export {
   verifyRecoveryOtp,
   verfiyRecoveryOtp,
 };
-
-export default function () {
-  return null;
-}
