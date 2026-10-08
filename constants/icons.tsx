@@ -46,6 +46,14 @@ export const searchBarIcon: ImageSourcePropType = require("../app/assets/icons/s
 export const mapIndicatorIcon: ImageSourcePropType = require("../app/assets/icons/indicator.png");
 
 
+export const handicapIcon: ImageSourcePropType = require("../app/assets/icons/disabled_parking.png");
+
+export const electricVehicleIcon: ImageSourcePropType = require("../app/assets/icons/electric-station.png");
+
+
+export const regularParkingIcon: ImageSourcePropType = require("../app/assets/icons/parking-spot.png");
+
+
 export const Icons = {
     
      Car: CarIcon,
@@ -69,6 +77,9 @@ export const Icons = {
      searchIcon: searchIcon,
      searchBarIcon: searchBarIcon,
      settingsIcon: settingsIcon,
-     ChargingStation: ChargingStation
+     ChargingStation: ChargingStation,
+     handicapIcon: handicapIcon,
+     electricVehicleIcon: electricVehicleIcon,
+     regularParkingIcon: regularParkingIcon
 
 }

@@ -1,19 +1,68 @@
-import { TouchableOpacity, View , Image,Text, TextInput} from "react-native";
-import { useState } from "react";
+import { TouchableOpacity, View , Image,Text, TextInput, Platform, Alert} from "react-native";
+import { useEffect, useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MapView from "react-native-maps";
+import MapView, { MapViewProps } from "react-native-maps";
+import { useRef } from "react";
 import BottomSheet from "@gorhom/bottom-sheet";
 import { Icons } from "../../constants/icons"
+import { getNearbyLocations } from "../services/mapfilter";
+import * as Location from "expo-location";
+
+
 
 
 const Home = () => {
   const [isPressed, setIsPressed] = useState(false);
+
+    const [marker, setMarker] = useState<{ latitude: number; longitude: number } | null>(null);
+
+    const mapRef = useRef<MapView>(null);
+
+
+  const enableLocations = async () => {
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") return;
+
+      if (Platform.OS === "android") {
+        try {
+          await Location.enableNetworkProviderAsync();
+        } catch {
+        }
+      }
+
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
+
+      const coords = {
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+      setMarker(coords);
+
+      
+      mapRef.current?.animateToRegion(
+        {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        600
+      );
+    } catch (error) {
+      console.warn("Could not get location", error);
+    }
+  };
 
   return (
     <SafeAreaView className="home-screen">
       <View className="map-section">
         <View className="map-content">
           <MapView
+            ref={mapRef}
+            showsUserLocation={true}
             style={{ flex: 1 }}
             initialRegion={{
               latitude: 37.78825,
@@ -25,6 +74,8 @@ const Home = () => {
           <View
             className="map-indicator"
             pointerEvents="none"
+           
+            
             style={{
               top: "50%",
               left: "50%",
@@ -55,11 +106,27 @@ const Home = () => {
               </View>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity>
-            <View className="inner-square-settings">
-              <Image className="settings-icon" source={require("../assets/icons/menu.png")} />
-            </View>
-          </TouchableOpacity>
+          <View className="map-control-stack">
+            <TouchableOpacity
+
+            onPress={() => {
+              setIsPressed(isPressed);
+
+              Alert.alert("Handicap Mode is active");
+            }}
+
+            
+            >
+              <View className="inner-square-settings">
+                <Image className="settings-icon" source={require("../assets/icons/menu.png")} />
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <View className="inner-square-handicap">
+                <Image className="handicap-icon" source={require("../assets/icons/disabled_parking.png")} />
+              </View>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 
@@ -84,33 +151,28 @@ const Home = () => {
           </View>
         </View>
 
-
-
-
-              <View className="distance-container">
-                <Text className="distance-text">
-                  Shortest Distance
-                </Text>
-              </View>
-
                
-               <View className="filters-container">
+               <View className="nearby-locations-container">
 
-                  
+                <View className="nearby-title-row">
+                  <Image className="parking-icon" source={Icons.regularParkingIcon} />
+                  <Text className="text-nearby-locations">
+                        Nearby Parkings 
+                  </Text>
+                </View>
+                <View className="nearby-divider" />
 
+            
+                <TouchableOpacity onPress={enableLocations}>
+                  <View className="search-button">
+                    <Text className="text-search-button">
+                      Search Nearby Parkings
+                    </Text>
+                  </View>
+                </TouchableOpacity>
 
                </View>
 
-
-
-
-
-
-              <View className=" distance-value-container">
-                <Text className="distance-value-text">
-      
-                </Text>
-              </View>
 
       </BottomSheet>
     </SafeAreaView>

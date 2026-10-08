@@ -19,7 +19,13 @@
       "bundler": "metro"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ParkZone uses your location to find nearby parking."
+        }
+      ]
     ]
   }
 }
