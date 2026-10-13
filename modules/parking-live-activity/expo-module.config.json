@@ -1,0 +1,7 @@
+{
+  "name": "parking-live-activity",
+  "platforms": ["ios"],
+  "ios": {
+    "modules": ["ParkingLiveActivityModule"]
+  }
+}

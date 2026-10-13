@@ -132,6 +132,10 @@ async function calculateDistance(lat1, lon1, lat2, lon2) {
     return R * 2 * Math.asin(Math.sqrt(a));
 }
 
+export default function () {
+    return null;
+}
+
 
 
 

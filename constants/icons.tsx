@@ -1,85 +1,61 @@
 import type { ImageSourcePropType } from "react-native";
 
+export const logoImg: ImageSourcePropType = require("../picon.png");
+export const piconImg: ImageSourcePropType = require("../picon.png");
 
-export const CarIcon: ImageSourcePropType = require("../app/assets/icons/car.png");
-
-export const parkingTicketIcon: ImageSourcePropType = require("../app/assets/icons/parking-ticket.png");
-
-export const parkingClock: ImageSourcePropType = require("../app/assets/icons/parking.png");
-
-export const lockIcon: ImageSourcePropType = require("../app/assets/icons/lock_pass.png");
-
-export const phoneIcon: ImageSourcePropType = require("../app/assets/icons/phone-call.png");
-
-export const facebookIcon: ImageSourcePropType = require("../app/assets/icons/communication.png");
-
+// Backwards-compatible aliases pointing to the official picon asset
+export const CarIcon: ImageSourcePropType = piconImg;
+export const parkingTicketIcon: ImageSourcePropType = piconImg;
+export const parkingClock: ImageSourcePropType = piconImg;
+export const lockIcon: ImageSourcePropType = piconImg;
+export const phoneIcon: ImageSourcePropType = piconImg;
+export const facebookIcon: ImageSourcePropType = piconImg;
 export const googleIcon: ImageSourcePropType = require("../app/assets/icons/google.png");
-
-export const arrowBack: ImageSourcePropType = require("../app/assets/icons/arrow.png");
-
-export const emailIcon: ImageSourcePropType = require("../app/assets/icons/email.png");
-
-export const locksIcon: ImageSourcePropType= require("../app/assets/icons/security.png");
-
-export const logoImg: ImageSourcePropType = require("../app/assets/icons/logo_park.png");
-
-export const checkBoxCheckedIcon: ImageSourcePropType = require("../app/assets/icons/checkmark.png");
-
-export const HomeIcon: ImageSourcePropType = require("../app/assets/icons/home.png"); 
-
-export const VehicleIcon: ImageSourcePropType = require("../app/assets/icons/parked-car.png");
-
-export const notificationIcon: ImageSourcePropType = require("../app/assets/icons/notification.png"); 
-
-export const PayIcon: ImageSourcePropType = require("../app/assets/icons/credit-card.png");
-
-export const ActivityIcon: ImageSourcePropType = require("../app/assets/icons/wall-clock.png");
-
-export const searchIcon: ImageSourcePropType = require("../app/assets/icons/search.png");
-
-export const settingsIcon: ImageSourcePropType = require("../app/assets/icons/menu.png");
-
-export const ChargingStation: ImageSourcePropType = require("../app/assets/icons/charging-station.png");
-
-export const searchBarIcon: ImageSourcePropType = require("../app/assets/icons/search-bar.png");
-
-export const mapIndicatorIcon: ImageSourcePropType = require("../app/assets/icons/indicator.png");
-
-
-export const handicapIcon: ImageSourcePropType = require("../app/assets/icons/disabled_parking.png");
-
-export const electricVehicleIcon: ImageSourcePropType = require("../app/assets/icons/electric-station.png");
-
-
-export const regularParkingIcon: ImageSourcePropType = require("../app/assets/icons/parking-spot.png");
-
+export const arrowBack: ImageSourcePropType = piconImg;
+export const emailIcon: ImageSourcePropType = piconImg;
+export const locksIcon: ImageSourcePropType = piconImg;
+export const checkBoxCheckedIcon: ImageSourcePropType = piconImg;
+export const HomeIcon: ImageSourcePropType = piconImg;
+export const VehicleIcon: ImageSourcePropType = piconImg;
+export const notificationIcon: ImageSourcePropType = piconImg;
+export const PayIcon: ImageSourcePropType = piconImg;
+export const ActivityIcon: ImageSourcePropType = piconImg;
+export const searchIcon: ImageSourcePropType = piconImg;
+export const settingsIcon: ImageSourcePropType = piconImg;
+export const ChargingStation: ImageSourcePropType = piconImg;
+export const searchBarIcon: ImageSourcePropType = piconImg;
+export const mapIndicatorIcon: ImageSourcePropType = piconImg;
+export const handicapIcon: ImageSourcePropType = piconImg;
+export const electricVehicleIcon: ImageSourcePropType = piconImg;
+export const regularParkingIcon: ImageSourcePropType = piconImg;
+export const userIcon: ImageSourcePropType = piconImg;
 
 export const Icons = {
-    
-     Car: CarIcon,
-     ParkingTicket: parkingTicketIcon,
-     ParkingClock: parkingClock,
-     lockIcon: lockIcon,
-     phoneIcon: phoneIcon,
-     googleIcon: googleIcon,
-     facebookIcon: facebookIcon,
-     arrowBack: arrowBack,
-     emailIcon: emailIcon,
-     locksIcon: locksIcon,
-     logoImg: logoImg,
-     checkBoxCheckedIcon: checkBoxCheckedIcon,
-     HomeIcon: HomeIcon,
-     VehicleIcon: VehicleIcon,
-     mapIndicatorIcon: mapIndicatorIcon,
-     notificationIcon: notificationIcon,
-     PayIcon: PayIcon,
-     ActivityIcon: ActivityIcon,
-     searchIcon: searchIcon,
-     searchBarIcon: searchBarIcon,
-     settingsIcon: settingsIcon,
-     ChargingStation: ChargingStation,
-     handicapIcon: handicapIcon,
-     electricVehicleIcon: electricVehicleIcon,
-     regularParkingIcon: regularParkingIcon
-
-}
+  Car: CarIcon,
+  ParkingTicket: parkingTicketIcon,
+  ParkingClock: parkingClock,
+  lockIcon: lockIcon,
+  phoneIcon: phoneIcon,
+  googleIcon: googleIcon,
+  facebookIcon: facebookIcon,
+  arrowBack: arrowBack,
+  emailIcon: emailIcon,
+  locksIcon: locksIcon,
+  logoImg: logoImg,
+  picon: piconImg,
+  checkBoxCheckedIcon: checkBoxCheckedIcon,
+  HomeIcon: HomeIcon,
+  VehicleIcon: VehicleIcon,
+  mapIndicatorIcon: mapIndicatorIcon,
+  notificationIcon: notificationIcon,
+  PayIcon: PayIcon,
+  ActivityIcon: ActivityIcon,
+  searchIcon: searchIcon,
+  searchBarIcon: searchBarIcon,
+  settingsIcon: settingsIcon,
+  ChargingStation: ChargingStation,
+  handicapIcon: handicapIcon,
+  electricVehicleIcon: electricVehicleIcon,
+  regularParkingIcon: regularParkingIcon,
+  userIcon: userIcon,
+};

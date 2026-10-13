@@ -47,9 +47,9 @@ export const dotseffect = (index = 0) => {
     {id: 1,  title: 
     "Pay Your Parking with E-tickets",
      subtitle: "E-tickets make parking payment easy. You can pay for your parking using our app, and receive an electronic ticket that you can show to the parking attendant.",
-            icon: Icons.Car},
-    {id: 2,  title: "Remember Your Parking Time", subtitle: "Set reminders for your parking duration whenever is necessary", icon: Icons.ParkingClock},
-    {id: 3,  title: "ParkingTicket", subtitle: "Keep track of your parking tickets and you can use MOMO Mobile Payment", icon: Icons.ParkingTicket},
+            icon: Icons.picon},
+    {id: 2,  title: "Remember Your Parking Time", subtitle: "Set reminders for your parking duration whenever is necessary", icon: Icons.picon},
+    {id: 3,  title: "ParkingTicket", subtitle: "Keep track of your parking tickets and you can use MOMO Mobile Payment", icon: Icons.picon},
 
   ] as const;
 

@@ -4,14 +4,29 @@
     "slug": "parkZone",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./picon.png",
     "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./picon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.anonymous.parkZone",
+      "infoPlist": {
+        "NSSupportsLiveActivities": true,
+        "NSSupportsLiveActivitiesFrequentUpdates": true
+      }
     },
     "android": {
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
+      "adaptiveIcon": {
+        "foregroundImage": "./picon.png",
+        "backgroundColor": "#ffffff"
+      },
       "package": "com.anonymous.parkZone"
     },
     "scheme": "parkzone",
@@ -25,7 +40,8 @@
         {
           "locationWhenInUsePermission": "ParkZone uses your location to find nearby parking."
         }
-      ]
+      ],
+      "./plugins/withLiveActivities"
     ]
   }
 }

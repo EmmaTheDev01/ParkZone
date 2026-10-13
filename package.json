@@ -9,6 +9,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
     "@gorhom/bottom-sheet": "^5.2.14",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@rnmapbox/maps": "^10.3.5",
@@ -18,9 +19,13 @@
     "@vonage/server-sdk": "^3.30.1",
     "dotenv": "^16.6.1",
     "expo": "~54.0.36",
+    "expo-blur": "~15.0.8",
+    "expo-camera": "~17.0.10",
     "expo-constants": "~18.0.14",
+    "expo-image-picker": "~17.0.11",
     "expo-linking": "~8.0.12",
     "expo-location": "~19.0.8",
+    "expo-notifications": "~0.32.17",
     "expo-router": "~6.0.24",
     "expo-status-bar": "~3.0.9",
     "mailtrap": "^4.10.0",
@@ -34,6 +39,7 @@
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
+    "react-native-svg": "15.12.1",
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {

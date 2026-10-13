@@ -62,7 +62,7 @@ serve(async (req: Request) => {
         </head>
         <body>
           <div class="card">
-            <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">🅿️ ParkZone Receipt</div>
+            <div style="font-size: 24px; font-weight: bold; margin-bottom: 16px;">ParkZone Receipt</div>
             <div class="title">Payment Confirmed</div>
             <div class="row"><span>Location:</span><span>${data.locationName || "Parking Zone"}</span></div>
             <div class="row"><span>Space:</span><span>${data.spaceNumber || "Assigned"}</span></div>
@@ -79,7 +79,7 @@ serve(async (req: Request) => {
         <!DOCTYPE html>
         <html>
         <body style="font-family: sans-serif; padding: 24px; color: #1e293b;">
-          <h2>🅿️ ParkZone</h2>
+          <h2>ParkZone</h2>
           <p>${data.message || "Notification from ParkZone."}</p>
           <p style="font-size: 12px; color: #94a3b8;">Sent from team@eswipe.app</p>
         </body>

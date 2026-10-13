@@ -1,15 +1,22 @@
 import { Alert } from "react-native";
 import { supabase } from "../lib/supabase";
 
-export const signIn = async (phoneNumber: string, password: string) => {
-    const normalizedPhoneNumber = phoneNumber.trim();
+export const signIn = async (identifier: string, password: string) => {
+    const clean = identifier.trim();
 
-    if (!normalizedPhoneNumber || !password) {
-        throw new Error("Phone number and password are required");
+    if (!clean || !password) {
+        throw new Error("Email or phone number and password are required");
+    }
+
+    if (clean.includes("@")) {
+        return supabase.auth.signInWithPassword({
+            email: clean.toLowerCase(),
+            password,
+        });
     }
 
     return supabase.auth.signInWithPassword({
-        phone: normalizedPhoneNumber,
+        phone: clean,
         password,
     });
 };
@@ -171,7 +178,12 @@ export const updatePassword = async (newPassword: string) => {
     return data;
 };
 
+export const signOut = async () => {
+    return supabase.auth.signOut();
+};
+
 export default function () {
     return null;
 }
+
 

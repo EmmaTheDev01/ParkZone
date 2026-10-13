@@ -101,7 +101,7 @@ serve(async (req: Request) => {
         </head>
         <body>
           <div class="card">
-            <div class="brand">🅿️ Park<span>Zone</span></div>
+            <div class="brand">Park<span>Zone</span></div>
             <div class="title">${type === "recovery" ? "Reset Your Password" : "Confirm Your Email"}</div>
             <p class="desc">
               ${
@@ -128,7 +128,7 @@ serve(async (req: Request) => {
         <!DOCTYPE html>
         <html>
         <body style="font-family: sans-serif; padding: 24px; color: #1e293b;">
-          <h2>🅿️ ParkZone</h2>
+          <h2>ParkZone</h2>
           <p>${customMessage || "Welcome to ParkZone, your smart parking assistant."}</p>
         </body>
         </html>

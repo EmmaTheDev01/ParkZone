@@ -32,7 +32,7 @@ serve(async (req: Request) => {
 
     const normalizedEmail = email.trim().toLowerCase();
     const greetingName = name ? ` ${name}` : "";
-    const subject = "Welcome to ParkZone - Your Smart Parking Assistant 🅿️";
+    const subject = "Welcome to ParkZone - Your Smart Parking Assistant";
 
     const emailHtml = `
       <!DOCTYPE html>
@@ -58,23 +58,23 @@ serve(async (req: Request) => {
       </head>
       <body>
         <div class="card">
-          <div class="brand">🅿️ Park<span>Zone</span></div>
+          <div class="brand">Park<span>Zone</span></div>
           <div class="hero-badge">Account Ready</div>
-          <div class="title">Welcome aboard${greetingName}! 🎉</div>
+          <div class="title">Welcome aboard${greetingName}!</div>
           <p class="desc">
             We're thrilled to have you! With ParkZone, finding, reserving, and paying for parking spots has never been easier.
           </p>
           <div class="features">
             <div class="feature-item">
-              <span class="feature-icon">🔍</span>
+              <span class="feature-icon">•</span>
               <span><strong>Instant Spot Discovery:</strong> View live availability, hourly rates, and directions in Kigali.</span>
             </div>
             <div class="feature-item" style="margin-top: 12px;">
-              <span class="feature-icon">📱</span>
+              <span class="feature-icon">•</span>
               <span><strong>QR Code Check-In:</strong> Scan to park seamlessly with zero hassle.</span>
             </div>
             <div class="feature-item" style="margin-top: 12px;">
-              <span class="feature-icon">💳</span>
+              <span class="feature-icon">•</span>
               <span><strong>Flexible Payments:</strong> Pay securely using MTN Mobile Money, card, or cash.</span>
             </div>
           </div>
