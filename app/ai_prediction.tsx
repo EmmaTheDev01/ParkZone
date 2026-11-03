@@ -46,8 +46,8 @@ export default function AiPredictionScreen() {
     return () => unsub();
   }, []);
 
-  const activeSoc = customSoc !== null ? customSoc : telemetry?.batterySoc ?? 70;
-  const batteryCapacity = telemetry?.batteryCapacityKwh ?? 60.48;
+  const activeSoc = customSoc !== null ? customSoc : (telemetry?.batterySoc || 0);
+  const batteryCapacity = telemetry?.batteryCapacityKwh || 0;
 
   // Memoized AI Prediction Computation
   const prediction = useMemo(() => {
@@ -57,7 +57,7 @@ export default function AiPredictionScreen() {
       topography,
       drivingMode,
       climateLoad,
-      ambientTempC: telemetry?.ambientTemperatureC ?? 24,
+      ambientTempC: telemetry?.ambientTemperatureC || 0,
       batteryCapacityKwh: batteryCapacity,
       currentSocPct: activeSoc,
     };
@@ -210,15 +210,18 @@ export default function AiPredictionScreen() {
                 style={[
                   styles.feasibilityText,
                   {
-                    color: prediction.isReachableWithoutStop
-                      ? theme.evGreen
-                      : theme.textSecondary,
+                    color:
+                      batteryCapacity > 0 && prediction.isReachableWithoutStop
+                        ? theme.evGreen
+                        : theme.textSecondary,
                   },
                 ]}
               >
-                {prediction.isReachableWithoutStop
-                  ? "DIRECT TRIP"
-                  : "STOP NEEDED"}
+                {batteryCapacity > 0
+                  ? prediction.isReachableWithoutStop
+                    ? "DIRECT TRIP"
+                    : "STOP NEEDED"
+                  : "AWAITING TELEMETRY"}
               </Text>
             </View>
           </View>
@@ -280,7 +283,7 @@ export default function AiPredictionScreen() {
                   },
                 ]}
               >
-                {prediction.estimatedSocAtArrivalPct}%
+                {batteryCapacity > 0 ? `${prediction.estimatedSocAtArrivalPct}%` : "--"}
               </Text>
             </View>
 
@@ -297,7 +300,7 @@ export default function AiPredictionScreen() {
                 MAX RANGE
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {prediction.maxCruisingRangeKm} km
+                {batteryCapacity > 0 ? `${prediction.maxCruisingRangeKm} km` : "--"}
               </Text>
             </View>
 
@@ -324,8 +327,9 @@ export default function AiPredictionScreen() {
                   },
                 ]}
               >
-                {prediction.bufferMarginKm > 0 ? "+" : ""}
-                {prediction.bufferMarginKm} km
+                {batteryCapacity > 0
+                  ? `${prediction.bufferMarginKm > 0 ? "+" : ""}${prediction.bufferMarginKm} km`
+                  : "--"}
               </Text>
             </View>
           </View>

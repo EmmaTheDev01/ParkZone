@@ -91,39 +91,39 @@ export interface PredictionResult {
   aiInsights: string[];
 }
 
-// Initial state using real telemetry baseline without fake mock strings
+// Initial state: 0 baseline until live telemetry or vehicle profile is synced
 let currentTelemetry: CarTelemetry = {
   connectionState: "disconnected",
   connectionType: "disconnected",
   connectedDeviceName: null,
   vin: "",
-  vehicleModel: "Active Vehicle",
+  vehicleModel: "",
   plateNumber: "",
   isElectric: false,
   speedKmH: 0,
   batterySoc: 0,
   batteryCapacityKwh: 0,
-  batteryTempC: 25,
+  batteryTempC: 0,
   chargingStatus: "idle",
   chargingPowerKw: 0,
   chargingVoltageV: 0,
   chargingCurrentA: 0,
   energyDeliveredKwh: 0,
   location: {
-    latitude: -1.9441,
-    longitude: 30.0619,
-    altitude: 1540,
+    latitude: 0,
+    longitude: 0,
+    altitude: 0,
     heading: 0,
     speedKmH: 0,
   },
   elevationGradientPct: 0,
-  predictedPowerPerDistanceWhPerKm: 140,
+  predictedPowerPerDistanceWhPerKm: 0,
   estimatedRangeRemainingKm: 0,
-  ambientTemperatureC: 24,
-  drivingEfficiencyScore: 90,
-  hvacPowerKw: 1.0,
+  ambientTemperatureC: 0,
+  drivingEfficiencyScore: 0,
+  hvacPowerKw: 0,
   odometerKm: 0,
-  lastSyncTimestamp: Date.now(),
+  lastSyncTimestamp: 0,
 };
 
 type TelemetryListener = (telemetry: CarTelemetry) => void;
@@ -141,11 +141,9 @@ export async function syncWithActiveVehicle(): Promise<void> {
     if (raw) {
       const v = JSON.parse(raw);
       const isEv = v.vehicleType === "ev";
-      const batteryCapacity = v.batteryCapacityKwh || (isEv ? 60 : 0);
-      const batteryLevel = v.batteryLevelPercent !== undefined ? v.batteryLevelPercent : (isEv ? 75 : 0);
-
-      // Range calculation based on actual capacity and SOC
-      const range = v.estimatedRangeKm || Math.round((batteryCapacity * (batteryLevel / 100)) / 0.15);
+      const batteryCapacity = Number(v.batteryCapacityKwh) || 0;
+      const batteryLevel = v.batteryLevelPercent !== undefined ? Number(v.batteryLevelPercent) : 0;
+      const range = Number(v.estimatedRangeKm) || 0;
 
       updateCarTelemetry({
         plateNumber: v.plateNumber || "",
@@ -155,7 +153,7 @@ export async function syncWithActiveVehicle(): Promise<void> {
         batteryCapacityKwh: batteryCapacity,
         batterySoc: batteryLevel,
         estimatedRangeRemainingKm: range,
-        chargingVoltageV: isEv ? 400 : 12,
+        chargingVoltageV: 0,
       });
     }
   } catch (_) {}
@@ -438,21 +436,21 @@ export function calculatePowerPrediction(params: PredictionInput): PredictionRes
   );
 
   // Available battery energy in kWh
-  const capacity = batteryCapacityKwh > 0 ? batteryCapacityKwh : 60;
-  const availableKwh = (capacity * currentSocPct) / 100;
+  const capacity = batteryCapacityKwh;
+  const availableKwh = capacity > 0 ? (capacity * currentSocPct) / 100 : 0;
 
   // Maximum cruising range on remaining capacity
-  const maxCruisingRangeKm = Math.round(
-    (availableKwh / (predictedPowerPerDistanceWhPerKm / 1000))
-  );
+  const maxCruisingRangeKm =
+    capacity > 0 && predictedPowerPerDistanceWhPerKm > 0
+      ? Math.round(availableKwh / (predictedPowerPerDistanceWhPerKm / 1000))
+      : 0;
 
-  const bufferMarginKm = maxCruisingRangeKm - targetDistanceKm;
-  const isReachableWithoutStop = bufferMarginKm >= 15;
+  const bufferMarginKm = maxCruisingRangeKm > 0 ? maxCruisingRangeKm - targetDistanceKm : 0;
+  const isReachableWithoutStop = maxCruisingRangeKm > 0 && bufferMarginKm >= 15;
 
   const remainingKwhAtArrival = Math.max(0, availableKwh - totalEnergyRequiredKwh);
-  const estimatedSocAtArrivalPct = Math.round(
-    (remainingKwhAtArrival / capacity) * 100
-  );
+  const estimatedSocAtArrivalPct =
+    capacity > 0 ? Math.round((remainingKwhAtArrival / capacity) * 100) : 0;
 
   // Recommended stops calculation
   let recommendedStopsCount = 0;

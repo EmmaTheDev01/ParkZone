@@ -30,6 +30,22 @@ import {
 
 const { width } = Dimensions.get("window");
 
+function formatCompassHeading(heading: number): string {
+  if (heading <= 0 || heading > 360) return "--";
+  const cardinals = [
+    "North",
+    "North-East",
+    "East",
+    "South-East",
+    "South",
+    "South-West",
+    "West",
+    "North-West",
+  ];
+  const idx = Math.round(heading / 45) % 8;
+  return `${Math.round(heading)}° ${cardinals[idx]}`;
+}
+
 export default function AndroidAutoScreen() {
   const router = useRouter();
   const theme = useTheme();
@@ -265,7 +281,9 @@ export default function AndroidAutoScreen() {
 
             <View style={styles.speedDisplayBox}>
               <Text style={[styles.speedHeroNumber, { color: theme.text }]}>
-                {telemetry.predictedPowerPerDistanceWhPerKm}
+                {telemetry.predictedPowerPerDistanceWhPerKm > 0
+                  ? telemetry.predictedPowerPerDistanceWhPerKm
+                  : "--"}
               </Text>
               <Text style={[styles.speedUnitLabel, { color: theme.textSecondary }]}>
                 Wh / km
@@ -282,11 +300,14 @@ export default function AndroidAutoScreen() {
               ]}
             >
               <Text style={[styles.efficiencyText, { color: theme.text }]}>
-                Efficiency: {telemetry.drivingEfficiencyScore}%
+                {telemetry.drivingEfficiencyScore > 0
+                  ? `Efficiency: ${telemetry.drivingEfficiencyScore}%`
+                  : "Awaiting live telemetry"}
               </Text>
               <Text style={[styles.efficiencySub, { color: theme.textSecondary }]}>
-                {telemetry.elevationGradientPct > 0 ? "+" : ""}
-                {telemetry.elevationGradientPct}% slope
+                {telemetry.elevationGradientPct !== 0
+                  ? `${telemetry.elevationGradientPct > 0 ? "+" : ""}${telemetry.elevationGradientPct}% slope`
+                  : "--"}
               </Text>
             </View>
           </View>
@@ -363,7 +384,7 @@ export default function AndroidAutoScreen() {
                 CHARGE LEVEL
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.batterySoc}%
+                {telemetry.batterySoc > 0 ? `${telemetry.batterySoc}%` : "--"}
               </Text>
             </View>
 
@@ -377,7 +398,9 @@ export default function AndroidAutoScreen() {
                 ESTIMATED RANGE
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.estimatedRangeRemainingKm} km
+                {telemetry.estimatedRangeRemainingKm > 0
+                  ? `${telemetry.estimatedRangeRemainingKm} km`
+                  : "--"}
               </Text>
             </View>
 
@@ -391,9 +414,9 @@ export default function AndroidAutoScreen() {
                 ACTIVE DRAW
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.chargingPowerKw !== 0
+                {telemetry.chargingPowerKw > 0
                   ? `${telemetry.chargingPowerKw} kW`
-                  : "0.0 kW"}
+                  : "--"}
               </Text>
             </View>
 
@@ -407,7 +430,9 @@ export default function AndroidAutoScreen() {
                 PACK VOLTAGE
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.chargingVoltageV} V
+                {telemetry.chargingVoltageV > 0
+                  ? `${telemetry.chargingVoltageV} V`
+                  : "--"}
               </Text>
             </View>
 
@@ -421,7 +446,7 @@ export default function AndroidAutoScreen() {
                 TEMPERATURE
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.batteryTempC} °C
+                {telemetry.batteryTempC > 0 ? `${telemetry.batteryTempC} °C` : "--"}
               </Text>
             </View>
 
@@ -435,7 +460,9 @@ export default function AndroidAutoScreen() {
                 PACK SIZE
               </Text>
               <Text style={[styles.metricValue, { color: theme.text }]}>
-                {telemetry.batteryCapacityKwh} kWh
+                {telemetry.batteryCapacityKwh > 0
+                  ? `${telemetry.batteryCapacityKwh} kWh`
+                  : "--"}
               </Text>
             </View>
           </View>
@@ -466,8 +493,9 @@ export default function AndroidAutoScreen() {
                 GPS Coordinates
               </Text>
               <Text style={[styles.listRowValue, { color: theme.text }]}>
-                {telemetry.location.latitude.toFixed(4)} N,{" "}
-                {telemetry.location.longitude.toFixed(4)} E
+                {telemetry.location.latitude !== 0
+                  ? `${telemetry.location.latitude.toFixed(4)}, ${telemetry.location.longitude.toFixed(4)}`
+                  : "Acquiring GPS..."}
               </Text>
             </View>
 
@@ -476,7 +504,9 @@ export default function AndroidAutoScreen() {
                 Elevation
               </Text>
               <Text style={[styles.listRowValue, { color: theme.text }]}>
-                {telemetry.location.altitude} m altitude
+                {telemetry.location.altitude > 0
+                  ? `${Math.round(telemetry.location.altitude)} m altitude`
+                  : "--"}
               </Text>
             </View>
 
@@ -485,7 +515,7 @@ export default function AndroidAutoScreen() {
                 Compass Heading
               </Text>
               <Text style={[styles.listRowValue, { color: theme.text }]}>
-                {telemetry.location.heading}° North-East
+                {formatCompassHeading(telemetry.location.heading)}
               </Text>
             </View>
 
@@ -494,7 +524,9 @@ export default function AndroidAutoScreen() {
                 Cabin Climate
               </Text>
               <Text style={[styles.listRowValue, { color: theme.text }]}>
-                {telemetry.ambientTemperatureC} °C • HVAC {telemetry.hvacPowerKw} kW
+                {telemetry.ambientTemperatureC > 0
+                  ? `${telemetry.ambientTemperatureC} °C${telemetry.hvacPowerKw > 0 ? ` • HVAC ${telemetry.hvacPowerKw} kW` : ""}`
+                  : "--"}
               </Text>
             </View>
           </View>

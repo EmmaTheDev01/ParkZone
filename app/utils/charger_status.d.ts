@@ -22,3 +22,4 @@ export function disconnectVehicleClient(): void;
 export function broadcastCarDataRequest(): void;
 
 export default function ChargerStatusRoute(): null;
+
