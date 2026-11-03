@@ -19,6 +19,8 @@ import {
   subscribeCarTelemetry,
   connectCarViaBluetooth,
   disconnectCarBluetooth,
+  connectCarViaWebSocket,
+  disconnectCarWebSocket,
   setAndroidAutoConnected,
 } from "./services/carTelemetry";
 import {
@@ -83,6 +85,8 @@ export default function AndroidAutoScreen() {
   const handleDisconnect = async () => {
     if (telemetry?.connectionType === "bluetooth_ble") {
       await disconnectCarBluetooth();
+    } else if (telemetry?.connectionType === "websocket") {
+      disconnectCarWebSocket();
     } else {
       setAndroidAutoConnected(false);
     }
@@ -161,6 +165,8 @@ export default function AndroidAutoScreen() {
             {isConnected
               ? telemetry.connectionType === "bluetooth_ble"
                 ? "BLUETOOTH"
+                : telemetry.connectionType === "websocket"
+                ? "WEBSOCKET"
                 : "ANDROID AUTO"
               : "OFFLINE"}
           </Text>
@@ -543,8 +549,10 @@ export default function AndroidAutoScreen() {
             {isConnected
               ? telemetry.connectionType === "bluetooth_ble"
                 ? `Vehicle connected via Bluetooth (${telemetry.connectedDeviceName || "BLE Adapter"}). Live speed and telemetry synced.`
+                : telemetry.connectionType === "websocket"
+                ? `Vehicle connected via WebSocket (${telemetry.connectedDeviceName || "In-Car Gateway"}). Live range, battery, charging, and capacity synced.`
                 : "Vehicle linked via Android Auto CarApp Protocol. Driving telemetry synced in real time."
-              : "If your car cannot run Android Auto, pair with your vehicle's Bluetooth (OBD-II adapter or head unit) to transmit live charging, speed, and power data."}
+              : "Connect via WebSocket or vehicle Bluetooth (OBD-II adapter or head unit) to transmit live battery, range, charging, and speed telemetry."}
           </Text>
 
           {isConnected ? (
@@ -565,26 +573,46 @@ export default function AndroidAutoScreen() {
               </Text>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity
-              style={[
-                styles.standardActionButton,
-                {
-                  backgroundColor: theme.surfaceMuted,
-                  borderColor: theme.border,
-                  borderWidth: 1,
-                },
-              ]}
-              onPress={() => {
-                setBluetoothModalVisible(true);
-                handleStartBluetoothScan();
-              }}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="bluetooth" size={16} color={theme.text} />
-              <Text style={[styles.standardActionButtonText, { color: theme.text }]}>
-                Connect Vehicle Bluetooth
-              </Text>
-            </TouchableOpacity>
+            <View style={{ gap: 8 }}>
+              <TouchableOpacity
+                style={[
+                  styles.standardActionButton,
+                  {
+                    backgroundColor: theme.surfaceMuted,
+                    borderColor: theme.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => connectCarViaWebSocket()}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="wifi-outline" size={16} color={theme.text} />
+                <Text style={[styles.standardActionButtonText, { color: theme.text }]}>
+                  Connect In-Car WebSocket
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.standardActionButton,
+                  {
+                    backgroundColor: theme.surfaceMuted,
+                    borderColor: theme.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => {
+                  setBluetoothModalVisible(true);
+                  handleStartBluetoothScan();
+                }}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="bluetooth" size={16} color={theme.text} />
+                <Text style={[styles.standardActionButtonText, { color: theme.text }]}>
+                  Connect Vehicle Bluetooth
+                </Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 

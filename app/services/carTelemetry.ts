@@ -4,6 +4,12 @@
 import * as Location from "expo-location";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { connectToDevice, disconnectDevice } from "../utils/bluetooth";
+import {
+  connectVehicleClient,
+  disconnectVehicleClient,
+  onCarDataUpdate,
+  CarTelemetryPayload,
+} from "../utils/charger_status";
 
 export interface CarLocation {
   latitude: number;
@@ -25,6 +31,7 @@ export type VehicleConnectionType =
   | "android_auto"
   | "bluetooth_ble"
   | "obd2"
+  | "websocket"
   | "disconnected";
 
 export type ConnectionState = "connected" | "connecting" | "disconnected";
@@ -287,6 +294,76 @@ export function setAndroidAutoConnected(connected: boolean): void {
     });
   }
 }
+
+/**
+ * Connects directly to vehicle telemetry stream via WebSocket
+ * (reads range, battery SOC %, charging status, battery capacity, speed)
+ */
+export function connectCarViaWebSocket(url: string = "ws://127.0.0.1:8080"): void {
+  updateCarTelemetry({
+    connectionState: "connecting",
+    connectionType: "websocket",
+    connectedDeviceName: `WebSocket Stream (${url})`,
+  });
+
+  connectVehicleClient(url);
+}
+
+/**
+ * Disconnects the active WebSocket vehicle connection
+ */
+export function disconnectCarWebSocket(): void {
+  disconnectVehicleClient();
+  if (currentTelemetry.connectionType === "websocket") {
+    updateCarTelemetry({
+      connectionState: "disconnected",
+      connectionType: "disconnected",
+      connectedDeviceName: null,
+    });
+  }
+}
+
+// Automatically listen for real-time car data arriving over WebSocket
+onCarDataUpdate((data: CarTelemetryPayload) => {
+  if (!data) return;
+
+  const updates: Partial<CarTelemetry> = {};
+
+  if (data.range > 0) {
+    updates.estimatedRangeRemainingKm = Math.round(data.range);
+  }
+  if (data.battery > 0) {
+    updates.batterySoc = Math.min(100, Math.max(0, Math.round(data.battery)));
+  }
+  if (data.batteryCapacity > 0) {
+    updates.batteryCapacityKwh = Number(data.batteryCapacity.toFixed(1));
+  }
+  if (data.speed > 0) {
+    updates.speedKmH = Math.round(data.speed);
+  }
+  if (data.chargingPowerKw > 0) {
+    updates.chargingPowerKw = Number(data.chargingPowerKw.toFixed(1));
+  }
+  if (data.voltage > 0) {
+    updates.chargingVoltageV = Math.round(data.voltage);
+  }
+  if (data.current > 0) {
+    updates.chargingCurrentA = Number(data.current.toFixed(1));
+  }
+
+  updates.chargingStatus = data.charging ? "charging" : "idle";
+
+  if (
+    currentTelemetry.connectionType === "websocket" ||
+    currentTelemetry.connectionState === "connecting"
+  ) {
+    updates.connectionState = "connected";
+    updates.connectionType = "websocket";
+    updates.connectedDeviceName = "WebSocket In-Car Link";
+  }
+
+  updateCarTelemetry(updates);
+});
 
 /**
  * Predict energy consumption and power-per-distance using physical and neural regression models
