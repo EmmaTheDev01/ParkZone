@@ -1,8 +1,20 @@
 // Vehicle and Charger Communications Engine via WebSocket (CSMS / In-Car Gateway)
 // Enables real-time reading of car metrics: range, battery SOC %, charging state, and battery capacity.
 
-let WebSocketServer = null;
-let WebSocketClient = typeof WebSocket !== "undefined" ? WebSocket : null;
+export interface CarTelemetryPayload {
+  range: number;
+  battery: number; // 0 - 100%
+  charging: boolean;
+  batteryCapacity: number; // kWh
+  speed: number; // km/h
+  chargingPowerKw: number;
+  voltage: number;
+  current: number;
+  timestamp: number;
+}
+
+let WebSocketServer: any = null;
+let WebSocketClient: any = typeof WebSocket !== "undefined" ? WebSocket : null;
 
 try {
   const wsModule = require("ws");
@@ -19,10 +31,10 @@ try {
 const wss = WebSocketServer ? new WebSocketServer({ port: 8080 }) : null;
 
 // Ping chargers for status updates
-const foundChargers = [];
+const foundChargers: any[] = [];
 
 // In-memory latest vehicle telemetry received over WebSocket
-let latestCarData = {
+let latestCarData: CarTelemetryPayload = {
   range: 0,
   battery: 0,
   charging: false,
@@ -34,9 +46,10 @@ let latestCarData = {
   timestamp: 0,
 };
 
-const carDataListeners = new Set();
+type CarDataListener = (data: CarTelemetryPayload) => void;
+const carDataListeners = new Set<CarDataListener>();
 
-function notifyCarDataListeners(data) {
+function notifyCarDataListeners(data: CarTelemetryPayload): void {
   carDataListeners.forEach((cb) => {
     try {
       cb(data);
@@ -44,7 +57,7 @@ function notifyCarDataListeners(data) {
   });
 }
 
-function updateCarData(newData) {
+function updateCarData(newData: Partial<CarTelemetryPayload>): void {
   if (!newData) return;
   latestCarData = {
     ...latestCarData,
@@ -58,7 +71,7 @@ function updateCarData(newData) {
  * Parses car & charger telemetry payloads from WebSocket messages.
  * Extracts: range (km), battery (SOC %), charging (boolean/status), battery capacity (kWh), speed, and charging power.
  */
-function parseCarData(payload) {
+export function parseCarData(payload: any): CarTelemetryPayload | null {
   let obj = payload;
   if (typeof payload === "string") {
     try {
@@ -72,8 +85,8 @@ function parseCarData(payload) {
   // Handle OCPP 1.6J / 2.0.1 MeterValues calls: [2, "id", "MeterValues", { ... }]
   if (Array.isArray(obj) && obj.length >= 4 && obj[2] === "MeterValues") {
     const p = obj[3];
-    let soc = null;
-    let powerKw = null;
+    let soc: number | null = null;
+    let powerKw: number | null = null;
     if (p && Array.isArray(p.meterValue)) {
       for (const mv of p.meterValue) {
         if (Array.isArray(mv.sampledValue)) {
@@ -91,6 +104,8 @@ function parseCarData(payload) {
       batteryCapacity: 0,
       speed: 0,
       chargingPowerKw: powerKw ?? 0,
+      voltage: 0,
+      current: 0,
       timestamp: Date.now(),
     };
   }
@@ -158,7 +173,7 @@ function parseCarData(payload) {
 /**
  * Sends a query payload over WebSocket asking the connected car or charger for telemetry.
  */
-function requestCarData(ws) {
+export function requestCarData(ws: any): boolean {
   if (!ws) return false;
   try {
     const query = JSON.stringify({
@@ -177,14 +192,14 @@ function requestCarData(ws) {
 /**
  * Get latest known vehicle data received from WebSocket
  */
-function getLatestCarData() {
+export function getLatestCarData(): CarTelemetryPayload {
   return latestCarData;
 }
 
 /**
  * Subscribe to car data updates
  */
-function onCarDataUpdate(callback) {
+export function onCarDataUpdate(callback: CarDataListener): () => void {
   if (typeof callback !== "function") return () => {};
   carDataListeners.add(callback);
   if (latestCarData.timestamp > 0) {
@@ -199,11 +214,11 @@ function onCarDataUpdate(callback) {
 
 // Server mode connection handling (e.g. CSMS)
 if (wss) {
-  wss.on("connection", (ws) => {
+  wss.on("connection", (ws: any) => {
     // Request vehicle/charger data immediately on connect
     requestCarData(ws);
 
-    ws.on("message", (message) => {
+    ws.on("message", (message: any) => {
       try {
         const text = typeof message === "string" ? message : message.toString("utf8");
         const parsed = parseCarData(text);
@@ -224,18 +239,18 @@ if (wss) {
   });
 }
 
-function broadcastCarDataRequest() {
+export function broadcastCarDataRequest(): void {
   if (!wss) return;
-  wss.clients.forEach((ws) => {
+  wss.clients.forEach((ws: any) => {
     requestCarData(ws);
   });
 }
 
-function pingChargers() {
+export function pingChargers(): any {
   if (!wss) return null;
 
   return setInterval(() => {
-    wss.clients.forEach((ws) => {
+    wss.clients.forEach((ws: any) => {
       const status = checkChargerStatus(ws);
 
       if (status === "online") {
@@ -253,7 +268,7 @@ function pingChargers() {
   }, 30000);
 }
 
-function checkChargerStatus(ws) {
+export function checkChargerStatus(ws: any): string {
   if (!ws) return "unknown";
   const WS = WebSocketClient || (typeof WebSocket !== "undefined" ? WebSocket : null);
   if (WS) {
@@ -276,14 +291,14 @@ function checkChargerStatus(ws) {
   return "unknown";
 }
 
-function hasChargers() {
+export function hasChargers(): boolean {
   return wss ? wss.clients.size > 0 : false;
 }
 
 // Active client connection for React Native mobile app
-let activeClientWs = null;
+let activeClientWs: any = null;
 
-function connectVehicleClient(url = "ws://127.0.0.1:8080") {
+export function connectVehicleClient(url = "ws://127.0.0.1:8080"): any {
   const WS = WebSocketClient || (typeof WebSocket !== "undefined" ? WebSocket : null);
   if (!WS) return null;
 
@@ -302,7 +317,7 @@ function connectVehicleClient(url = "ws://127.0.0.1:8080") {
       requestCarData(ws);
     };
 
-    ws.onmessage = (event) => {
+    ws.onmessage = (event: any) => {
       try {
         const parsed = parseCarData(event.data);
         if (parsed) {
@@ -325,7 +340,7 @@ function connectVehicleClient(url = "ws://127.0.0.1:8080") {
   }
 }
 
-function disconnectVehicleClient() {
+export function disconnectVehicleClient(): void {
   if (activeClientWs) {
     try {
       activeClientWs.close();
@@ -334,20 +349,7 @@ function disconnectVehicleClient() {
   }
 }
 
-module.exports = {
-  checkChargerStatus,
-  hasChargers,
-  pingChargers,
-  parseCarData,
-  requestCarData,
-  getLatestCarData,
-  onCarDataUpdate,
-  connectVehicleClient,
-  disconnectVehicleClient,
-  broadcastCarDataRequest,
-};
-
 // Route default export for Expo Router compatibility
-module.exports.default = function ChargerStatusRoute() {
+export default function ChargerStatusRoute(): null {
   return null;
-};
+}
