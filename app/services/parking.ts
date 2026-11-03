@@ -1081,7 +1081,9 @@ export async function fetchEvChargers(locationId: string): Promise<EvChargerTele
         .eq("location_id", locationId);
 
     if (error) {
-        console.warn("fetchEvChargers error:", error.message);
+        if (!error.message?.includes("schema cache") && !error.message?.includes("does not exist")) {
+            console.warn("fetchEvChargers error:", error.message);
+        }
         return [];
     }
 

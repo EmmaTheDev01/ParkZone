@@ -12,7 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import Svg, { Circle } from "react-native-svg";
 import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "../hooks/useTheme";
@@ -527,6 +527,60 @@ export default function EvChargingScreen() {
               100% capacity
             </Text>
           </View>
+        </View>
+
+        {/* In-Car Android Auto & AI Prediction Shortcuts */}
+        <View style={{ flexDirection: "row", gap: 10, marginVertical: 4 }}>
+          <TouchableOpacity
+            onPress={() => router.push("/ai_prediction")}
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              backgroundColor: theme.surface,
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+            activeOpacity={0.7}
+          >
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+              <Ionicons name="sparkles" size={16} color={theme.evGreen} />
+              <View>
+                <Text style={{ fontSize: 11, fontWeight: "700", color: theme.text }}>
+                  AI Power Prediction
+                </Text>
+                <Text style={{ fontSize: 9, color: theme.textSecondary }}>
+                  Forecast Wh/km consumption
+                </Text>
+              </View>
+            </View>
+            <Ionicons name="chevron-forward" size={14} color={theme.textSecondary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => router.push("/android_auto")}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: theme.surface,
+              paddingVertical: 12,
+              paddingHorizontal: 14,
+              borderRadius: 14,
+              borderWidth: 1,
+              borderColor: theme.border,
+              gap: 6,
+            }}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="alpha-a-circle-outline" size={18} color={theme.text} />
+            <Text style={{ fontSize: 11, fontWeight: "700", color: theme.text }}>
+              Auto HUD
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* =========================================================================
