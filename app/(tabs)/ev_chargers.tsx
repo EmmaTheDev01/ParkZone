@@ -975,36 +975,40 @@ const EVChargers = () => {
             </View>
 
             {is3DView ? (
-              <View style={{ maxHeight: 380, paddingHorizontal: 16 }}>
-                <AerialParkingLot3D
-                  topology={(sheetStation as any)?.layout_topology || "perpendicular"}
-                  spaces={
-                    sheetSpaces.length > 0
-                      ? (selectedZone ? sheetSpaces.filter((s) => (s.zone_code || "EV Hub") === selectedZone) : sheetSpaces)
-                      : (sheetStation?.chargers || []).map((ch) => ({
-                          id: ch.id,
-                          location_id: sheetStation?.id || "",
-                          space_number: ch.station_identifier,
-                          zone_code: selectedZone || "EV Hub",
-                          space_type: "ev" as const,
-                          is_occupied: ch.status !== "available",
-                          qr_code_token: `QR-${ch.station_identifier}`,
-                          watt_power_kw: ch.max_output_kw,
-                        }))
-                  }
-                  selectedSpaceId={
-                    sheetSpaces.find((s) => s.space_number === selectedBay)?.id || null
-                  }
-                  onSelectSpace={(sp) => {
-                    setSelectedBay(sp.space_number);
-                    setInspectedSpace(sp);
-                  }}
-                  currentZone={selectedZone || "EV Hub"}
-                  locationName={sheetStation?.name || "EV Charging Station"}
-                  lotKind="charging"
-                  hideSelectionCard={true}
-                  compact={true}
-                />
+              <View style={{ minHeight: 280, marginBottom: 12 }}>
+                {loadingSpaces ? (
+                  <BayGridSkeleton count={6} />
+                ) : (
+                  <AerialParkingLot3D
+                    topology={(sheetStation as any)?.layout_topology || "perpendicular"}
+                    spaces={
+                      sheetSpaces.length > 0
+                        ? (selectedZone ? sheetSpaces.filter((s) => (s.zone_code || "EV Hub") === selectedZone) : sheetSpaces)
+                        : (sheetStation?.chargers || []).map((ch) => ({
+                            id: ch.id,
+                            location_id: sheetStation?.id || "",
+                            space_number: ch.station_identifier,
+                            zone_code: selectedZone || "EV Hub",
+                            space_type: "ev" as const,
+                            is_occupied: ch.status !== "available",
+                            qr_code_token: `QR-${ch.station_identifier}`,
+                            watt_power_kw: ch.max_output_kw,
+                          }))
+                    }
+                    selectedSpaceId={
+                      sheetSpaces.find((s) => s.space_number === selectedBay)?.id || null
+                    }
+                    onSelectSpace={(sp) => {
+                      setSelectedBay(sp.space_number);
+                      setInspectedSpace(sp);
+                    }}
+                    currentZone={selectedZone || "EV Hub"}
+                    locationName={sheetStation?.name || "EV Charging Station"}
+                    lotKind="charging"
+                    hideSelectionCard={true}
+                    compact={true}
+                  />
+                )}
               </View>
             ) : (
             /* 2-Column Slot Grid showing Available Spots and Parked Cars in this Zone */

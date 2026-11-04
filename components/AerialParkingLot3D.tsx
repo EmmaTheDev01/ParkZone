@@ -164,15 +164,8 @@ export const AerialParkingLot3D: React.FC<Props> = ({
     const spaceLayout: TopologyType = space.topology || activeTopology || "perpendicular";
 
     let spaceAngle = 0;
-
     if (spaceLayout === "oblique") {
-      spaceAngle = isRightBank ? 25 : -25;
-    } else if (spaceLayout === "parallel") {
-      spaceAngle = 0;
-    } else if (spaceLayout === "wide") {
-      spaceAngle = 0;
-    } else {
-      spaceAngle = 0;
+      spaceAngle = isRightBank ? 20 : -20;
     }
 
     const carVariant =
@@ -201,7 +194,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
         }}
         style={[
           styles.stallBox,
-          compact && { width: 104, height: 136, padding: 8 },
+          compact && styles.stallBoxCompact,
           spaceLayout === "parallel" && styles.stallParallel,
           spaceLayout === "wide" && styles.stallWide,
           {
@@ -211,7 +204,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 ? theme.surface
                 : theme.background,
             borderColor: isSelected
-              ? theme.text
+              ? (isEvStall ? theme.evGreen : theme.text)
               : isVacant
                 ? theme.borderStrong
                 : theme.border,
@@ -225,8 +218,9 @@ export const AerialParkingLot3D: React.FC<Props> = ({
             style={[
               styles.stallNumber,
               {
-                color: isVacant ? theme.text : isEvStall ? theme.evGreen : theme.textSecondary,
+                color: isVacant ? theme.text : theme.textSecondary,
                 fontWeight: "600",
+                fontSize: compact ? 11 : 12,
               },
             ]}
           >
@@ -235,54 +229,40 @@ export const AerialParkingLot3D: React.FC<Props> = ({
 
           <View style={styles.headerRightTags}>
             {isEvStall && (
-              <View style={[styles.evBadgeSmall, { backgroundColor: theme.evGreen }]}>
-                <Ionicons name="flash" size={8} color={theme.evGreenText} style={{ marginRight: 2 }} />
-                <Text style={[styles.evBadgeSmallText, { color: theme.evGreenText }]}>EV</Text>
+              <View style={[styles.evBadgeSmall, { backgroundColor: theme.surfaceMuted, borderWidth: 1, borderColor: theme.border }]}>
+                <Ionicons name="flash" size={compact ? 7 : 8} color={theme.evGreen} />
+                <Text style={[styles.evBadgeSmallText, { color: theme.evGreen, fontSize: compact ? 7.5 : 8 }]}>
+                  {space.watt_power_kw ? `${space.watt_power_kw}k` : "EV"}
+                </Text>
               </View>
             )}
             {space.space_type === "handicap" && !isEvStall && (
-              <View style={[styles.hBadgeSmall, { backgroundColor: theme.pillInactiveBg }]}>
-                <Text style={[styles.hBadgeSmallText, { color: theme.text }]}>HC</Text>
+              <View style={[styles.hBadgeSmall, { backgroundColor: theme.surfaceMuted }]}>
+                <Text style={[styles.hBadgeSmallText, { color: theme.textSecondary, fontSize: compact ? 7.5 : 8.5 }]}>HC</Text>
               </View>
             )}
           </View>
         </View>
 
         {/* Stall Center — Displays authentic realistic car when occupied */}
-        <View style={styles.stallCenterContent}>
+        <View style={[styles.stallCenterContent, compact && { height: 46, justifyContent: "center" }]}>
           {space.is_occupied ? (
-            <View style={styles.occupiedCarContainer}>
+            <View style={{ alignItems: "center", justifyContent: "center" }}>
               {spaceLayout === "parallel" ? (
-                <View style={{ alignItems: "center", justifyContent: "center" }}>
-                  <HorizontalUltraRealisticCar
-                    color={carVariant}
-                    width={compact ? 70 : 86}
-                    height={compact ? 36 : 44}
-                  />
-                </View>
+                <HorizontalUltraRealisticCar
+                  color={carVariant}
+                  width={compact ? 52 : 76}
+                  height={compact ? 26 : 38}
+                />
               ) : (
-                <View
-                  style={{
-                    alignItems: "center",
-                    justifyContent: "center",
-                    transform: [
-                      { rotate: `${spaceAngle}deg` },
-                      { scale: compact ? 0.72 : spaceLayout === "wide" ? 0.95 : 0.88 },
-                    ],
-                  }}
-                >
+                <View style={{ transform: [{ rotate: `${spaceAngle}deg` }] }}>
                   <VerticalUltraRealisticCar
                     color={carVariant}
-                    width={compact ? 40 : 46}
-                    height={compact ? 74 : 88}
+                    width={compact ? 28 : 40}
+                    height={compact ? 48 : 72}
                   />
                 </View>
               )}
-              <View style={[styles.occupiedRibbon, { backgroundColor: isEvStall ? theme.evGreenSoft : theme.surfaceMuted }]}>
-                <Text style={[styles.occupiedRibbonText, { color: isEvStall ? theme.evGreen : theme.textSecondary }]}>
-                  {isEvStall ? "CHARGING" : "OCCUPIED"}
-                </Text>
-              </View>
             </View>
           ) : (
             <View style={styles.vacantTarget}>
@@ -291,59 +271,48 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                   styles.vacantReticle,
                   {
                     borderColor: isSelected ? theme.text : theme.borderStrong,
-                    width: 22,
-                    height: 22,
-                    borderRadius: 11,
-                    marginBottom: 3,
+                    width: compact ? 18 : 22,
+                    height: compact ? 18 : 22,
+                    borderRadius: compact ? 9 : 11,
+                    marginBottom: 2,
                   },
                 ]}
               >
-                <View style={[styles.pulseDot, { backgroundColor: isEvStall ? theme.evGreen : theme.textSecondary, width: 5, height: 5, borderRadius: 2.5 }]} />
+                <View style={[styles.pulseDot, { backgroundColor: isEvStall ? theme.evGreen : theme.textSecondary, width: 4, height: 4, borderRadius: 2 }]} />
               </View>
-              <Text style={[styles.vacantLabel, { color: isEvStall ? theme.evGreen : theme.text, fontSize: 9, fontWeight: "600" }]}>
+              <Text style={[styles.vacantLabel, { color: isEvStall ? theme.evGreen : theme.text, fontSize: compact ? 8 : 9, fontWeight: "600" }]}>
                 {isEvStall ? "READY" : "AVAILABLE"}
               </Text>
-
-              {isEvStall && space.watt_power_kw ? (
-                <View
-                  style={[
-                    styles.wattBadge,
-                    {
-                      backgroundColor: theme.surfaceMuted,
-                      borderColor: theme.border,
-                      marginTop: 2,
-                    },
-                  ]}
-                >
-                  <Text style={[styles.wattBadgeText, { color: theme.textSecondary, fontSize: 8 }]}>
-                    {space.watt_power_kw} kW
-                  </Text>
-                </View>
-              ) : null}
             </View>
           )}
         </View>
 
         {/* Stall Footer */}
-        <View style={styles.stallFooter}>
+        <View style={[styles.stallFooter, compact && { marginTop: 1 }]}>
           {space.is_occupied ? (
-            <Text style={[styles.platePlate, { color: isEvStall ? theme.evGreen : theme.textSecondary }]} numberOfLines={1}>
-              {space.current_vehicle_plate || (isEvStall ? "CHARGING" : "OCCUPIED")}
+            <Text style={[styles.platePlate, { color: theme.textSecondary, fontSize: compact ? 8 : 9 }]} numberOfLines={1}>
+              {space.current_vehicle_plate || (isEvStall ? "Charging" : "Occupied")}
             </Text>
           ) : (
             <View style={styles.priceRow}>
-              <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary, fontSize: 9, fontWeight: "500" }]}>
+              <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary, fontSize: compact ? 8 : 9, fontWeight: "500" }]} numberOfLines={1}>
                 {isEvStall
-                  ? "9k–10k RWF"
+                  ? "Free Park"
                   : space.price_per_hour_rwf
                     ? `${space.price_per_hour_rwf} RWF/h`
-                    : "Vacant"}
+                    : "Standard Bay"}
               </Text>
             </View>
           )}
         </View>
 
-        {spaceLayout === "wide" && (
+        {isSelected && (
+          <View style={[styles.selectedCheckDot, { backgroundColor: isEvStall ? theme.evGreen : theme.text, top: 4, right: 4, width: 14, height: 14, borderRadius: 7 }]}>
+            <Ionicons name="checkmark" size={9} color={isEvStall ? theme.evGreenText : theme.background} />
+          </View>
+        )}
+
+        {spaceLayout === "wide" && !compact && (
           <View style={[styles.wideLoadingStripe, { backgroundColor: theme.borderStrong }]} />
         )}
       </TouchableOpacity>
@@ -402,107 +371,120 @@ export const AerialParkingLot3D: React.FC<Props> = ({
     <View
       style={[
         styles.container,
+        compact && styles.containerCompact,
         { backgroundColor: theme.surface, borderColor: theme.border },
       ]}
     >
-      <View style={[styles.asphaltGround, { backgroundColor: theme.background }]}>
-        {/* Admin-Configured Facility Architectural Layout Badge */}
-        <View style={styles.lotMetaBar}>
-          <View
-            style={[
-              styles.adminLayoutBadge,
-              {
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-              },
-            ]}
-          >
-            <View style={styles.adminLayoutLeft}>
-              <Ionicons
-                name="shield-checkmark"
-                size={13}
-                color={lotKind === "charging" ? theme.evGreen : theme.text}
-              />
-              <Text style={[styles.adminLayoutText, { color: theme.textSecondary }]}>
-                Official Layout:{" "}
-                <Text style={{ color: theme.text, fontWeight: "600" }}>
-                  {activeTopology === "oblique"
-                    ? "45° Diagonal Oblique"
-                    : activeTopology === "parallel"
-                      ? "0° Parallel Curb"
-                      : activeTopology === "wide"
-                        ? "Wide Pod Bays"
-                        : "90° Perpendicular Mall"}
+      <View style={[styles.asphaltGround, compact && styles.asphaltGroundCompact, { backgroundColor: theme.background }]}>
+        {!compact && (
+          <View style={styles.lotMetaBar}>
+            <View
+              style={[
+                styles.adminLayoutBadge,
+                {
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                },
+              ]}
+            >
+              <View style={styles.adminLayoutLeft}>
+                <Ionicons
+                  name="shield-checkmark"
+                  size={13}
+                  color={lotKind === "charging" ? theme.evGreen : theme.text}
+                />
+                <Text style={[styles.adminLayoutText, { color: theme.textSecondary }]}>
+                  Layout:{" "}
+                  <Text style={{ color: theme.text, fontWeight: "600" }}>
+                    {activeTopology === "oblique"
+                      ? "45° Diagonal Oblique"
+                      : activeTopology === "parallel"
+                        ? "0° Parallel Curb"
+                        : activeTopology === "wide"
+                          ? "Wide Pod Bays"
+                          : "90° Perpendicular Mall"}
+                  </Text>
                 </Text>
-              </Text>
+              </View>
             </View>
           </View>
-        </View>
+        )}
 
         {/* Sub-bar: Realtime Zone & Slot Counter */}
-        <View style={styles.zoneStatusBar}>
+        <View style={[styles.zoneStatusBar, compact && styles.zoneStatusBarCompact]}>
           <View style={styles.zoneStatusLeft}>
-            <View style={[styles.liveIndicatorPulse, { backgroundColor: theme.accent }]} />
-            <Text style={[styles.zoneActiveText, { color: theme.text }]}>{currentZone}</Text>
-            <Text style={[styles.zoneOccupancyCount, { color: theme.textSecondary }]}>
+            <View style={[styles.liveIndicatorPulse, { backgroundColor: lotKind === "charging" ? theme.evGreen : theme.accent }]} />
+            <Text style={[styles.zoneActiveText, { color: theme.text, fontSize: compact ? 12 : 13 }]}>{currentZone}</Text>
+            <Text style={[styles.zoneOccupancyCount, { color: theme.textSecondary, fontSize: compact ? 10.5 : 11 }]}>
               • {spaces.filter((s) => !s.is_occupied).length} of {spaces.length} Available
             </Text>
           </View>
 
-          <TouchableOpacity
-            activeOpacity={0.7}
-            onPress={() => {
-              const vacant = spaces.find((s) => !s.is_occupied);
-              if (vacant) {
-                triggerDriveCarToSlot(vacant);
-              } else {
-                VoiceGuidance.speak("All spaces in this zone are currently occupied.");
-              }
-            }}
-            style={[
-              styles.voiceAssistantPill,
-              { backgroundColor: theme.surface, borderColor: theme.borderStrong },
-            ]}
-          >
-            <Ionicons name="volume-medium" size={13} color={theme.text} />
-            <Text style={[styles.voiceAssistantPillText, { color: theme.text }]}>
-              Direct to Best Spot
-            </Text>
-          </TouchableOpacity>
+          {!compact && (
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => {
+                const vacant = spaces.find((s) => !s.is_occupied);
+                if (vacant) {
+                  triggerDriveCarToSlot(vacant);
+                } else {
+                  VoiceGuidance.speak("All spaces in this zone are currently occupied.");
+                }
+              }}
+              style={[
+                styles.voiceAssistantPill,
+                { backgroundColor: theme.surface, borderColor: theme.borderStrong },
+              ]}
+            >
+              <Ionicons name="volume-medium" size={13} color={theme.text} />
+              <Text style={[styles.voiceAssistantPillText, { color: theme.text }]}>
+                Direct to Best Spot
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, compact && styles.scrollContentCompact]}
         >
           <View style={styles.aisleContainer}>
-            <View style={styles.bankRow}>
+            <View style={[styles.bankRow, compact && { gap: 8 }]}>
               {leftBank.map((s, idx) => renderStall(s, false, idx))}
             </View>
 
             {/* Central Driving Aisle */}
             <View
               style={[
-                styles.drivingAisle,
+                compact ? styles.compactDrivingAisle : styles.drivingAisle,
                 {
                   backgroundColor: theme.surfaceMuted,
-                  borderColor: theme.borderStrong,
+                  borderColor: theme.border,
                 },
               ]}
             >
               <View style={[styles.aisleDashedLine, { backgroundColor: theme.borderStrong }]} />
               <View style={styles.drivingAisleCenter}>
-                <Ionicons name="arrow-forward" size={12} color={theme.textSecondary} />
-                <Text style={[styles.aisleDirectionIndicator, { color: theme.textSecondary }]}>
-                  DRIVING AISLE • ONE WAY
+                <Ionicons name="arrow-forward" size={compact ? 9 : 12} color={theme.textSecondary} />
+                <Text
+                  style={[
+                    styles.aisleDirectionIndicator,
+                    {
+                      color: theme.textSecondary,
+                      fontSize: compact ? 8 : 10,
+                      letterSpacing: compact ? 0.8 : 1.5,
+                    },
+                  ]}
+                >
+                  {compact ? "ONE WAY" : "DRIVING AISLE • ONE WAY"}
                 </Text>
-                <Ionicons name="arrow-forward" size={12} color={theme.textSecondary} />
+                <Ionicons name="arrow-forward" size={compact ? 9 : 12} color={theme.textSecondary} />
               </View>
               <View style={[styles.aisleDashedLine, { backgroundColor: theme.borderStrong }]} />
             </View>
 
-            <View style={styles.bankRow}>
+            <View style={[styles.bankRow, compact && { gap: 8 }]}>
               {rightBank.map((s, idx) => renderStall(s, true, idx))}
             </View>
           </View>
@@ -663,8 +645,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     marginVertical: 12,
   },
+  containerCompact: {
+    borderRadius: 16,
+    marginVertical: 4,
+  },
   asphaltGround: {
     padding: 14,
+  },
+  asphaltGroundCompact: {
+    padding: 10,
+    paddingBottom: 8,
   },
   lotMetaBar: {
     marginBottom: 10,
@@ -710,6 +700,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     paddingHorizontal: 4,
   },
+  zoneStatusBarCompact: {
+    marginBottom: 8,
+    paddingHorizontal: 2,
+  },
   zoneStatusLeft: {
     flexDirection: "row",
     alignItems: "center",
@@ -744,6 +738,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingRight: 24,
   },
+  scrollContentCompact: {
+    paddingRight: 16,
+  },
   aisleContainer: {
     flexDirection: "column",
     gap: 8,
@@ -751,6 +748,17 @@ const styles = StyleSheet.create({
   bankRow: {
     flexDirection: "row",
     gap: 12,
+  },
+  compactDrivingAisle: {
+    height: 20,
+    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    marginVertical: 3,
   },
   drivingAisle: {
     height: 48,
@@ -784,6 +792,12 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 10,
   },
+  selectedCheckDot: {
+    position: "absolute",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
   stallBox: {
     width: 112,
     height: 154,
@@ -791,6 +805,12 @@ const styles = StyleSheet.create({
     padding: 8,
     justifyContent: "space-between",
     position: "relative",
+  },
+  stallBoxCompact: {
+    width: 90,
+    height: 104,
+    padding: 6,
+    borderRadius: 12,
   },
   stallOblique: {
     transform: [{ skewX: "-12deg" }],

@@ -4189,29 +4189,33 @@ export default function Home() {
               </View>
 
               {sheetIs3DView ? (
-                <View style={{ maxHeight: 380, paddingHorizontal: 16 }}>
-                  <AerialParkingLot3D
-                    topology={selectedParkForSheet?.layout_topology || "perpendicular"}
-                    spaces={
-                      selectedSheetZone
-                        ? sheetSpaces.filter((s) => (s.zone_code || "Zone A") === selectedSheetZone)
-                        : sheetSpaces
-                    }
-                    selectedSpaceId={
-                      sheetSpaces.find((s) => s.space_number === selectedSheetBay)?.id || null
-                    }
-                    onSelectSpace={(sp) => {
-                      setSelectedSheetBay(sp.space_number);
-                      if (sp.space_type === "ev" || selectedParkForSheet?.is_electric_station) {
-                        setInspectedSheetSpace(sp);
+                <View style={{ minHeight: 280, marginBottom: 12 }}>
+                  {loadingSheetSpaces ? (
+                    <BayGridSkeleton count={6} />
+                  ) : (
+                    <AerialParkingLot3D
+                      topology={selectedParkForSheet?.layout_topology || "perpendicular"}
+                      spaces={
+                        selectedSheetZone
+                          ? sheetSpaces.filter((s) => (s.zone_code || "Zone A") === selectedSheetZone)
+                          : sheetSpaces
                       }
-                    }}
-                    currentZone={selectedSheetZone || "Zone A"}
-                    locationName={selectedParkForSheet?.name || "Parking Facility"}
-                    lotKind={selectedParkForSheet?.is_electric_station ? "charging" : "parking"}
-                    hideSelectionCard={true}
-                    compact={true}
-                  />
+                      selectedSpaceId={
+                        sheetSpaces.find((s) => s.space_number === selectedSheetBay)?.id || null
+                      }
+                      onSelectSpace={(sp) => {
+                        setSelectedSheetBay(sp.space_number);
+                        if (sp.space_type === "ev" || selectedParkForSheet?.is_electric_station) {
+                          setInspectedSheetSpace(sp);
+                        }
+                      }}
+                      currentZone={selectedSheetZone || "Zone A"}
+                      locationName={selectedParkForSheet?.name || "Parking Facility"}
+                      lotKind={selectedParkForSheet?.is_electric_station ? "charging" : "parking"}
+                      hideSelectionCard={true}
+                      compact={true}
+                    />
+                  )}
                 </View>
               ) : (
               /* 2-Column Bays & Cars Grid */
