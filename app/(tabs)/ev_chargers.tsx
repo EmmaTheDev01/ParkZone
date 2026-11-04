@@ -353,7 +353,7 @@ const EVChargers = () => {
     if (!matchesSearch) return false;
 
     if (activeCategory === "fast") {
-      return st.chargers.some((c) => c.max_output_kw >= 100);
+      return st.chargers.some((c) => c.max_output_kw >= 50);
     }
     if (activeCategory === "ac") {
       return st.chargers.some((c) => c.max_output_kw <= 22);
@@ -686,10 +686,14 @@ const EVChargers = () => {
           >
             <MaterialCommunityIcons name="ev-station" size={26} color={theme.textSecondary} />
             <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text, marginTop: 6 }}>
-              No EV stations found in database
+              {searchQuery.trim().length > 0
+                ? `No EV stations matching "${searchQuery}"`
+                : "No EV stations available in this category"}
             </Text>
             <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2, textAlign: "center" }}>
-              Add EV charging locations and chargers to view live telemetry.
+              {searchQuery.trim().length > 0
+                ? "Try searching by another area or station name in Kigali."
+                : "Try switching category filter to view all charging stations."}
             </Text>
           </View>
         ) : (
