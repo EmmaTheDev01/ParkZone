@@ -436,35 +436,6 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 </Text>
               </Text>
             </View>
-
-            <View
-              style={[
-                styles.adminBadgeTag,
-                {
-                  backgroundColor:
-                    lotKind === "charging"
-                      ? theme.evGreenSoft
-                      : theme.isDark
-                        ? "#27272A"
-                        : "#F4F4F5",
-                  borderColor: theme.border,
-                },
-              ]}
-            >
-              <Ionicons
-                name="lock-closed"
-                size={9}
-                color={lotKind === "charging" ? theme.evGreen : theme.textSecondary}
-              />
-              <Text
-                style={[
-                  styles.adminBadgeTagText,
-                  { color: lotKind === "charging" ? theme.evGreen : theme.textSecondary },
-                ]}
-              >
-                ADMIN CONFIGURED
-              </Text>
-            </View>
           </View>
         </View>
 

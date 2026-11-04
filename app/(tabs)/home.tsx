@@ -1879,15 +1879,6 @@ export default function Home() {
                       : "90° Perpendicular"}
                   </Text>
                 </Text>
-                <View
-                  style={[
-                    styles.adminLockTagHome,
-                    { backgroundColor: theme.isDark ? "#27272A" : "#F4F4F5" },
-                  ]}
-                >
-                  <Ionicons name="lock-closed" size={8} color={theme.textSecondary} />
-                  <Text style={[styles.adminLockTagTextHome, { color: theme.textSecondary }]}>Admin Set</Text>
-                </View>
               </View>
 
               <TouchableOpacity
