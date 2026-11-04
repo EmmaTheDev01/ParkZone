@@ -353,3 +353,4 @@ export function disconnectVehicleClient(): void {
 export default function ChargerStatusRoute(): null {
   return null;
 }
+

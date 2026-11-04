@@ -26,6 +26,7 @@ import {
   updateWalletBalance,
 } from "./services/parking";
 import { initiateMobilePayment } from "./services/mobilePayment";
+import ParkingPaymentQrModal from "../components/ParkingPaymentQrModal";
 
 const { width } = Dimensions.get("window");
 
@@ -127,6 +128,7 @@ export default function TransactionDetailsScreen() {
   // Paying loading state
   const [isProcessing, setIsProcessing] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
 
   // Real-time Database Loader
   const loadRealtimeTransaction = useCallback(
@@ -682,14 +684,38 @@ export default function TransactionDetailsScreen() {
           </View>
 
           {!isPayable && (
-            <View style={styles.metaRow}>
-              <Text style={[styles.metaLabel, { color: theme.text, fontWeight: "500" }]}>
-                Payment Status
-              </Text>
-              <Text style={[styles.metaValue, { color: theme.text, fontWeight: "500" }]}>
-                PAID IN FULL
-              </Text>
-            </View>
+            <>
+              <View style={styles.metaRow}>
+                <Text style={[styles.metaLabel, { color: theme.text, fontWeight: "500" }]}>
+                  Payment Status
+                </Text>
+                <Text style={[styles.metaValue, { color: theme.evGreen, fontWeight: "600" }]}>
+                  PAID IN FULL
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  backgroundColor: theme.background,
+                  borderColor: theme.border,
+                  borderWidth: 1,
+                  borderRadius: 14,
+                  paddingVertical: 11,
+                  marginTop: 12,
+                }}
+                onPress={() => setQrModalVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="qr-code-outline" size={16} color={theme.text} />
+                <Text style={{ fontSize: 12.5, fontWeight: "600", color: theme.text }}>
+                  View Payment QR Code
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
 
           {fine > 0 && (
@@ -893,6 +919,23 @@ export default function TransactionDetailsScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Parking Payment QR Pass Modal */}
+      <ParkingPaymentQrModal
+        visible={qrModalVisible}
+        onClose={() => setQrModalVisible(false)}
+        session={{
+          id: transaction.id,
+          bayNumber: transaction.bayNumber,
+          plate: transaction.plate,
+          name: transaction.name,
+          cost: totalAmount,
+          currency: transaction.currency,
+          receiptNumber: transaction.receiptNumber,
+          exitTime: exitTimeStr,
+          duration: transaction.duration,
+        }}
+      />
     </SafeAreaView>
   );
 }

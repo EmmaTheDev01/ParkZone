@@ -22,6 +22,7 @@ import { supabase } from "./lib/supabase";
 import { completeParkingSession, fetchActiveParkingTicket, resolveSpaceImageUrl } from "./services/parking";
 import { initiateMobilePayment } from "./services/mobilePayment";
 import { VoiceGuidance } from "./services/voiceGuidance";
+import ParkingPaymentQrModal from "../components/ParkingPaymentQrModal";
 
 const { width } = Dimensions.get("window");
 
@@ -185,6 +186,7 @@ export default function ParkingSessionScreen() {
 
   const [currentTick, setCurrentTick] = useState(Date.now());
   const [receiptModalVisible, setReceiptModalVisible] = useState(false);
+  const [qrModalVisible, setQrModalVisible] = useState(false);
 
   // Live timer interval if session is Active
   useEffect(() => {
@@ -408,7 +410,7 @@ export default function ParkingSessionScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={["top", "bottom"]}>
-      {/* Header Row: Centered "Parking Session" with subtle back button */}
+      {/* Header Row: Centered "Parking Session" with subtle back and QR pass buttons */}
       <View style={styles.topHeaderRow}>
         <TouchableOpacity
           style={[styles.headerNavBtn, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
@@ -420,7 +422,13 @@ export default function ParkingSessionScreen() {
 
         <Text style={[styles.screenHeaderTitle, { color: theme.text }]}>Parking Session</Text>
 
-        <View style={styles.headerSpacer} />
+        <TouchableOpacity
+          style={[styles.headerNavBtn, { backgroundColor: theme.surface, borderColor: theme.border, borderWidth: 1 }]}
+          onPress={() => setQrModalVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="qr-code-outline" size={18} color={theme.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -496,8 +504,8 @@ export default function ParkingSessionScreen() {
           )}
         </View>
 
-        {/* Verified Pre-paid Badge */}
-        <View
+        {/* Verified Pre-paid Badge (Tappable to view QR code) */}
+        <TouchableOpacity
           style={{
             flexDirection: "row",
             alignItems: "center",
@@ -511,12 +519,14 @@ export default function ParkingSessionScreen() {
             marginBottom: 10,
             alignSelf: "center",
           }}
+          onPress={() => setQrModalVisible(true)}
+          activeOpacity={0.8}
         >
-          <Ionicons name="checkmark-circle" size={13} color="#10B981" />
+          <Ionicons name="shield-checkmark" size={13} color="#10B981" />
           <Text style={{ fontSize: 11.5, fontWeight: "600", color: theme.text }}>
-            Pre-paid & Verified ({(session.cost || 300).toLocaleString()} {session.currency || "RWF"})
+            Pre-paid & Verified ({(session.cost || 300).toLocaleString()} {session.currency || "RWF"}) • View QR
           </Text>
-        </View>
+        </TouchableOpacity>
 
         {/* Circular Progress Dial with Breathing Glow Animation */}
         <View style={styles.dialWrapper}>
@@ -645,27 +655,56 @@ export default function ParkingSessionScreen() {
             </View>
           ) : null}
 
-          {/* Find My Vehicle Button */}
-          <TouchableOpacity
-            style={[styles.findVehicleBtn, { borderColor: theme.borderStrong, backgroundColor: theme.background }]}
-            onPress={() => {
-              Alert.alert(
-                "Find My Vehicle",
-                `Your vehicle (${session.plate || "-"}) is parked at Slot ${session.bayNumber} in ${session.name}.${session.zoneCode ? `\n\nFollow level markers to ${session.zoneCode}.` : ""}`,
-                [
-                  { text: "Dismiss", style: "cancel" },
-                  {
-                    text: "Open Map Navigator",
-                    onPress: () => router.push("/(tabs)/home"),
-                  },
-                ]
-              );
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="location-outline" size={17} color={theme.text} />
-            <Text style={[styles.findVehicleBtnText, { color: theme.text }]}>Find My Vehicle</Text>
-          </TouchableOpacity>
+          {/* Session Actions: QR Gate Pass & Find Vehicle */}
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
+            <TouchableOpacity
+              style={[
+                styles.findVehicleBtn,
+                {
+                  flex: 1,
+                  marginTop: 0,
+                  borderColor: theme.borderStrong,
+                  backgroundColor: theme.background,
+                },
+              ]}
+              onPress={() => setQrModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="qr-code-outline" size={17} color={theme.text} />
+              <Text style={[styles.findVehicleBtnText, { color: theme.text }]}>
+                QR Gate Pass
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.findVehicleBtn,
+                {
+                  flex: 1,
+                  marginTop: 0,
+                  borderColor: theme.borderStrong,
+                  backgroundColor: theme.background,
+                },
+              ]}
+              onPress={() => {
+                Alert.alert(
+                  "Find My Vehicle",
+                  `Your vehicle (${session.plate || "-"}) is parked at Slot ${session.bayNumber} in ${session.name}.${session.zoneCode ? `\n\nFollow level markers to ${session.zoneCode}.` : ""}`,
+                  [
+                    { text: "Dismiss", style: "cancel" },
+                    {
+                      text: "Open Map Navigator",
+                      onPress: () => router.push("/(tabs)/home"),
+                    },
+                  ]
+                );
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="location-outline" size={17} color={theme.text} />
+              <Text style={[styles.findVehicleBtnText, { color: theme.text }]}>Find Vehicle</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 
@@ -788,15 +827,45 @@ export default function ParkingSessionScreen() {
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.receiptDoneBtn, { backgroundColor: theme.primaryBtnBg }]}
-              onPress={() => setReceiptModalVisible(false)}
-            >
-              <Text style={[styles.receiptDoneBtnText, { color: theme.primaryBtnText }]}>Done</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={[
+                  styles.receiptDoneBtn,
+                  {
+                    flex: 1,
+                    backgroundColor: theme.surface,
+                    borderColor: theme.border,
+                    borderWidth: 1,
+                  },
+                ]}
+                onPress={() => {
+                  setReceiptModalVisible(false);
+                  setQrModalVisible(true);
+                }}
+              >
+                <Text style={[styles.receiptDoneBtnText, { color: theme.text }]}>View QR</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.receiptDoneBtn, { flex: 1, backgroundColor: theme.primaryBtnBg }]}
+                onPress={() => setReceiptModalVisible(false)}
+              >
+                <Text style={[styles.receiptDoneBtnText, { color: theme.primaryBtnText }]}>Done</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
+
+      {/* Parking Payment Session QR Code Pass Modal */}
+      <ParkingPaymentQrModal
+        visible={qrModalVisible}
+        onClose={() => setQrModalVisible(false)}
+        session={{
+          ...session,
+          exitTime: exitTimeStr,
+        }}
+      />
     </SafeAreaView>
   );
 }
