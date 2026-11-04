@@ -19,7 +19,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Defs, LinearGradient, Stop, Rect } from "react-native-svg";
 import MapView, { Marker, Polyline } from "react-native-maps";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router, useNavigation, useLocalSearchParams } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -1003,7 +1003,44 @@ export default function Home() {
   }, [selectedMapLocation, userCoordinates]);
 
   const [mapCategory, setMapCategory] = useState<string>("car");
+
+  // Keep map category aligned to driver's vehicle requirements
+  useEffect(() => {
+    if (isVehicleElectric) {
+      setMapCategory("ev");
+    } else {
+      setMapCategory("car");
+    }
+  }, [isVehicleElectric]);
+
   const [mapSearch, setMapSearch] = useState<string>("");
+  const [mapAreaFilter, setMapAreaFilter] = useState<string>("All Areas");
+
+  const handleViewAllAreas = useCallback(() => {
+    setMapCategory("all");
+    setMapAreaFilter("All Areas");
+    setMapSearch("");
+    if (mapRef.current) {
+      const allCoords = [
+        ...locations
+          .filter((l) => isVehicleElectric || !l.is_electric_station)
+          .map((l) => ({ latitude: Number(l.latitude), longitude: Number(l.longitude) })),
+        ...(isVehicleElectric
+          ? evStations.map((e) => ({ latitude: e.latitude, longitude: e.longitude }))
+          : []),
+      ].filter((c) => !isNaN(c.latitude) && !isNaN(c.longitude) && c.latitude !== 0);
+
+      if (allCoords.length > 0) {
+        mapRef.current.fitToCoordinates(allCoords, {
+          edgePadding: { top: 160, right: 50, bottom: 220, left: 50 },
+          animated: true,
+        });
+      } else {
+        mapRef.current.animateToRegion(KIGALI_REGION, 600);
+      }
+    }
+  }, [locations, evStations, isVehicleElectric]);
+
   const [mapBookmarked, setMapBookmarked] = useState<Record<string, boolean>>({});
 
   // Aux Modals
@@ -3134,9 +3171,9 @@ export default function Home() {
               <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
                 <Text style={[styles.nearbySectionTitle, { color: theme.text }]}>
                   {isAiThinking
-                    ? "AI Analyzing parking areas..."
+                    ? "AI Analyzing..."
                     : isAiMode
-                      ? "Recommended parking areas"
+                      ? "Recommended"
                       : "Parking nearby"}
                 </Text>
                 {isAiThinking ? (
@@ -3154,19 +3191,7 @@ export default function Home() {
                     </Text>
                   </View>
                 ) : isAiMode ? (
-                  <View
-                    style={[
-                      styles.aiAreaBadge,
-                      {
-                        backgroundColor: theme.isDark ? "#FFFFFF" : "#09090B",
-                      },
-                    ]}
-                  >
-                    <Ionicons name="sparkles" size={10} color={theme.isDark ? "#09090B" : "#FFFFFF"} />
-                    <Text style={[styles.aiAreaBadgeText, { color: theme.isDark ? "#09090B" : "#FFFFFF" }]}>
-                      AI MATCHED
-                    </Text>
-                  </View>
+                  <></>
                 ) : null}
               </View>
               <TouchableOpacity
@@ -3451,7 +3476,9 @@ export default function Home() {
                         {/* Free Places Badge on Image */}
                         <View style={styles.freePlacesBadge}>
                           <Text style={styles.freePlacesBadgeText}>
-                            {loc.available_spots ?? 0} free places
+                            {isEvLot && isVehicleElectric
+                              ? `${loc.available_spots ?? 0} charging spots`
+                              : `${loc.available_spots ?? 0} free places`}
                           </Text>
                         </View>
                         {/* Zone Badge on Image */}
@@ -3608,16 +3635,90 @@ export default function Home() {
                 </View>
               </View>
 
-              <TouchableOpacity
-                style={[styles.evGatewayActionBtn, { backgroundColor: theme.evGreen }]}
-                onPress={() => router.push("/(tabs)/ev_chargers")}
-                activeOpacity={0.85}
-              >
-                <Text style={[styles.evGatewayActionText, { color: theme.evGreenText }]} numberOfLines={1}>
-                  {isVehicleElectric ? "Explore 150 kW Fast Chargers" : "View EV Stations Directory"}
-                </Text>
-                <Ionicons name="arrow-forward" size={14} color={theme.evGreenText} />
-              </TouchableOpacity>
+              {isVehicleElectric ? (
+                <View style={{ gap: 8, marginTop: 12 }}>
+                  {/* Primary Full-Width CTA */}
+                  <TouchableOpacity
+                    style={[
+                      styles.evGatewayActionBtn,
+                      {
+                        backgroundColor: theme.evGreen,
+                        marginTop: 0,
+                        paddingVertical: 12,
+                        paddingHorizontal: 16,
+                      },
+                    ]}
+                    onPress={() => router.push("/(tabs)/ev_chargers")}
+                    activeOpacity={0.85}
+                  >
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                      <Ionicons name="flash" size={15} color={theme.evGreenText} />
+                      <Text style={[styles.evGatewayActionText, { color: theme.evGreenText, fontSize: 13, fontWeight: "700" }]}>
+                        Explore 150 kW Fast Chargers
+                      </Text>
+                    </View>
+                    <Ionicons name="arrow-forward" size={15} color={theme.evGreenText} />
+                  </TouchableOpacity>
+
+                  {/* Secondary In-Vehicle & Intelligence Tools */}
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <TouchableOpacity
+                      style={[
+                        styles.evGatewayActionBtn,
+                        {
+                          flex: 1,
+                          backgroundColor: theme.surface,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                          marginTop: 0,
+                          paddingVertical: 11,
+                          paddingHorizontal: 12,
+                        },
+                      ]}
+                      onPress={() => router.push("/ai_prediction")}
+                      activeOpacity={0.85}
+                    >
+                      <Ionicons name="sparkles" size={14} color={theme.evGreen} />
+                      <Text style={[styles.evGatewayActionText, { color: theme.text, fontSize: 12, fontWeight: "600" }]} numberOfLines={1}>
+                        AI Range Forecast
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.evGatewayActionBtn,
+                        {
+                          flex: 1,
+                          backgroundColor: theme.surface,
+                          borderWidth: 1,
+                          borderColor: theme.border,
+                          marginTop: 0,
+                          paddingVertical: 11,
+                          paddingHorizontal: 12,
+                        },
+                      ]}
+                      onPress={() => router.push("/android_auto")}
+                      activeOpacity={0.85}
+                    >
+                      <MaterialCommunityIcons name="alpha-a-circle-outline" size={16} color={theme.text} />
+                      <Text style={[styles.evGatewayActionText, { color: theme.text, fontSize: 12, fontWeight: "600" }]} numberOfLines={1}>
+                        Android Auto HUD
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.evGatewayActionBtn, { backgroundColor: theme.evGreen, marginTop: 12, paddingVertical: 12 }]}
+                  onPress={() => router.push("/(tabs)/ev_chargers")}
+                  activeOpacity={0.85}
+                >
+                  <Text style={[styles.evGatewayActionText, { color: theme.evGreenText, fontSize: 13, fontWeight: "700" }]}>
+                    View EV Stations Directory
+                  </Text>
+                  <Ionicons name="arrow-forward" size={14} color={theme.evGreenText} />
+                </TouchableOpacity>
+              )}
             </AnimatedBwGradientCard>
 
             {/* RECENT PARKING SECTION (Matches middle screen in user screenshot) */}
@@ -5450,10 +5551,21 @@ export default function Home() {
                   </>
                 )}
 
-                {/* Rate Bubble Markers for All Parking Places in System (Filtered by vehicle eligibility) */}
-                {(mapCategory === "all" || mapCategory === "car" || mapCategory === "truck" || mapCategory === "bike" || mapCategory === "bus") &&
+                {/* Rate Bubble Markers for Parking Places in System (Filtered by vehicle eligibility and area) */}
+                {((isVehicleElectric && (mapCategory === "car" || mapCategory === "all")) ||
+                  (!isVehicleElectric && (mapCategory === "all" || mapCategory === "car" || mapCategory === "truck" || mapCategory === "bike" || mapCategory === "bus"))) &&
                   eligibleLocations
                     .filter((loc) => {
+                      if (mapAreaFilter !== "All Areas" && loc.zone_code && loc.zone_code !== mapAreaFilter) {
+                        return false;
+                      }
+                      // In Parking Only mode or for standard vehicles, strictly exclude electric stations
+                      if (isVehicleElectric && mapCategory === "car" && loc.is_electric_station) {
+                        return false;
+                      }
+                      if (!isVehicleElectric && loc.is_electric_station) {
+                        return false;
+                      }
                       if (!mapSearch) return true;
                       return (
                         loc.name.toLowerCase().includes(mapSearch.toLowerCase()) ||
@@ -5477,18 +5589,28 @@ export default function Home() {
                                   backgroundColor: isSelected ? theme.pillActiveBg : theme.surface,
                                   borderColor: isSelected ? theme.pillActiveBg : theme.borderStrong,
                                   borderWidth: 1.5,
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  paddingHorizontal: 8,
                                 },
                               ]}
                             >
+                              <Ionicons
+                                name="car-outline"
+                                size={12}
+                                color={isSelected ? theme.pillActiveText : theme.text}
+                              />
                               <Text
                                 style={[
                                   styles.rateBubbleText,
                                   {
                                     color: isSelected ? theme.pillActiveText : theme.text,
+                                    fontWeight: "700",
                                   },
                                 ]}
                               >
-                                {loc.hourly_rate || 300} RWF/h
+                                {loc.available_spots ?? 0} Parking Spots
                               </Text>
                             </View>
                             <View
@@ -5505,8 +5627,8 @@ export default function Home() {
                       );
                     })}
 
-                {/* Rate Bubble Markers for EV Stations: ONLY shown if vehicle is electric */}
-                {(mapCategory === "all" || mapCategory === "ev") && isVehicleElectric &&
+                {/* Rate Bubble Markers for EV Stations: Shown strictly for EV vehicles in 'ev' or 'all' mode */}
+                {isVehicleElectric && (mapCategory === "all" || mapCategory === "ev") &&
                   evStations
                     .filter((ev) => {
                       if (!mapSearch) return true;
@@ -5517,6 +5639,9 @@ export default function Home() {
                     })
                     .map((ev) => {
                       const isSelected = selectedMapLocation?.id === ev.id;
+                      const availableChargersCount =
+                        ev.chargers?.filter((c) => c.status === "available").length ||
+                        (ev.chargers?.length ? ev.chargers.length : 4);
                       const evAsLoc: ParkingLocation = {
                         id: ev.id,
                         name: ev.name,
@@ -5526,8 +5651,8 @@ export default function Home() {
                         latitude: ev.latitude,
                         longitude: ev.longitude,
                         layout_topology: "perpendicular",
-                        total_spots: ev.chargers.length,
-                        available_spots: ev.chargers.filter((c) => c.status === "available").length,
+                        total_spots: ev.chargers?.length || 6,
+                        available_spots: availableChargersCount,
                         hourly_rate: 0,
                         daily_rate: 10000,
                         currency: "RWF",
@@ -5553,18 +5678,28 @@ export default function Home() {
                                   backgroundColor: isSelected ? theme.evGreen : theme.surface,
                                   borderColor: theme.evGreen,
                                   borderWidth: 1.5,
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  gap: 5,
+                                  paddingHorizontal: 8,
                                 },
                               ]}
                             >
+                              <Ionicons
+                                name="flash"
+                                size={12}
+                                color={isSelected ? theme.evGreenText : theme.evGreen}
+                              />
                               <Text
                                 style={[
                                   styles.rateBubbleText,
                                   {
                                     color: isSelected ? theme.evGreenText : theme.evGreen,
+                                    fontWeight: "700",
                                   },
                                 ]}
                               >
-                                9k–10k RWF
+                                {availableChargersCount} Charging Spots
                               </Text>
                             </View>
                             <View
@@ -5624,6 +5759,71 @@ export default function Home() {
                 </TouchableOpacity>
               </View>
 
+              {/* Driver Vehicle Satisfaction Mode Banner */}
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  marginTop: 2,
+                }}
+              >
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Ionicons
+                    name={isVehicleElectric ? (mapCategory === "car" ? "car-sport" : "flash") : "car-outline"}
+                    size={12}
+                    color={isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary}
+                  />
+                  <Text
+                    style={{
+                      fontSize: 10,
+                      fontWeight: "600",
+                      color: isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary,
+                    }}
+                  >
+                    {isVehicleElectric
+                      ? mapCategory === "car"
+                        ? "Electric Vehicle • Parking Only Mode"
+                        : mapCategory === "all"
+                          ? "Electric Vehicle • All Charging & Parking Spots"
+                          : "Electric Vehicle • Available Charging Areas"
+                      : "Standard Vehicle • Available Parking Lots"}
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    paddingHorizontal: 6,
+                    paddingVertical: 2,
+                    borderRadius: 8,
+                    backgroundColor: isVehicleElectric && mapCategory !== "car"
+                      ? theme.evGreenSoft
+                      : theme.surface,
+                    borderWidth: 1,
+                    borderColor: isVehicleElectric && mapCategory !== "car"
+                      ? theme.evGreenBorder
+                      : theme.border,
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 8,
+                      fontWeight: "700",
+                      color: isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary,
+                    }}
+                  >
+                    {isVehicleElectric
+                      ? mapCategory === "car"
+                        ? "PARKING ONLY"
+                        : mapCategory === "all"
+                          ? "ALL SPOTS"
+                          : "EV CHARGING"
+                      : "PARKING LOTS"}
+                  </Text>
+                </View>
+              </View>
+
               {/* Horizontal Vehicle/Place Filter Pills in App Colors */}
               <ScrollView
                 horizontal
@@ -5631,14 +5831,20 @@ export default function Home() {
                 style={styles.categoryPillsScroll}
                 contentContainerStyle={styles.categoryPillsContent}
               >
-                {[
-                  { id: "car", label: "Car", icon: "car-sport" },
-                  { id: "ev", label: "EV Hub", icon: "flash" },
-                  { id: "bike", label: "Bike", icon: "bicycle" },
-                  { id: "bus", label: "Bus", icon: "bus" },
-                  { id: "truck", label: "Truck", icon: "cube" },
-                  { id: "all", label: "All Spots", icon: "grid" },
-                ].map((cat) => {
+                {(isVehicleElectric
+                  ? [
+                      { id: "ev", label: "EV Charging", icon: "flash" },
+                      { id: "car", label: "Parking Only", icon: "car-sport" },
+                      { id: "all", label: "All Spots", icon: "globe-outline" },
+                    ]
+                  : [
+                      { id: "car", label: "Parking Lots", icon: "car-sport" },
+                      { id: "all", label: "All Areas", icon: "globe-outline" },
+                      { id: "bike", label: "Bike", icon: "bicycle" },
+                      { id: "bus", label: "Bus", icon: "bus" },
+                      { id: "truck", label: "Truck", icon: "cube" },
+                    ]
+                ).map((cat) => {
                   const isActive = mapCategory === cat.id;
                   const isEvCat = cat.id === "ev";
                   return (
@@ -5658,12 +5864,17 @@ export default function Home() {
                           shadowColor: theme.cardShadow,
                         },
                       ]}
-                      onPress={() => setMapCategory(cat.id)}
+                      onPress={() => {
+                        setMapCategory(cat.id);
+                        if (cat.id === "all") {
+                          handleViewAllAreas();
+                        }
+                      }}
                       activeOpacity={0.8}
                     >
                       <Ionicons
                         name={cat.icon as any}
-                        size={15}
+                        size={14}
                         color={
                           isActive
                             ? (isEvCat ? theme.evGreenText : theme.pillActiveText)
@@ -5681,7 +5892,7 @@ export default function Home() {
                               : isEvCat
                                 ? theme.evGreen
                                 : theme.text,
-                            fontWeight: isActive ? "600" : "400",
+                            fontWeight: isActive ? "700" : "500",
                           },
                         ]}
                       >
@@ -5691,7 +5902,85 @@ export default function Home() {
                   );
                 })}
               </ScrollView>
+
+              {/* Horizontal Zone / Area District Filter Pills */}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ marginTop: 6 }}
+                contentContainerStyle={{ paddingHorizontal: 16, gap: 6 }}
+              >
+                {["All Areas", "Zone A", "Zone B", "Zone C", "Zone D", "Zone E"].map((zone) => {
+                  const isZoneActive = mapAreaFilter === zone;
+                  return (
+                    <TouchableOpacity
+                      key={zone}
+                      style={{
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                        borderRadius: 14,
+                        backgroundColor: isZoneActive ? theme.pillActiveBg : theme.surface,
+                        borderWidth: 1,
+                        borderColor: isZoneActive ? theme.pillActiveBg : theme.border,
+                        shadowColor: theme.cardShadow,
+                        shadowOffset: { width: 0, height: 1 },
+                        shadowOpacity: 0.1,
+                        shadowRadius: 2,
+                        elevation: 2,
+                      }}
+                      onPress={() => {
+                        setMapAreaFilter(zone);
+                        if (zone === "All Areas") {
+                          handleViewAllAreas();
+                        }
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 11,
+                          fontWeight: isZoneActive ? "700" : "500",
+                          color: isZoneActive ? theme.pillActiveText : theme.text,
+                        }}
+                      >
+                        {zone}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
             </View>
+
+            {/* Floating "See All Areas" City Overview Button on Map */}
+            <TouchableOpacity
+              style={{
+                position: "absolute",
+                right: 16,
+                bottom: selectedMapLocation ? 250 : insets.bottom + 20,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                backgroundColor: theme.surface,
+                borderColor: theme.border,
+                borderWidth: 1,
+                paddingHorizontal: 14,
+                paddingVertical: 9,
+                borderRadius: 20,
+                shadowColor: theme.cardShadow,
+                shadowOffset: { width: 0, height: 3 },
+                shadowOpacity: 0.25,
+                shadowRadius: 5,
+                elevation: 5,
+                zIndex: 10,
+              }}
+              onPress={handleViewAllAreas}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="scan-outline" size={15} color={theme.text} />
+              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.text }}>
+                See All Areas
+              </Text>
+            </TouchableOpacity>
 
             {/* Floating Bottom Card matching the user's screenshot */}
             {selectedMapLocation && (
@@ -5745,9 +6034,15 @@ export default function Home() {
                 {/* Stats Row: Price • 4 min • Available Spots */}
                 <View style={styles.cardStatsRow}>
                   <View style={styles.statBadgeItem}>
-                    <Ionicons name="cash-outline" size={14} color={theme.textSecondary} />
+                    <Ionicons
+                      name={selectedMapLocation.is_electric_station && isVehicleElectric ? "flash" : "cash-outline"}
+                      size={14}
+                      color={selectedMapLocation.is_electric_station && isVehicleElectric ? theme.evGreen : theme.textSecondary}
+                    />
                     <Text style={[styles.statBadgeText, { color: theme.text }]}>
-                      {selectedMapLocation.hourly_rate} RWF /hr
+                      {selectedMapLocation.is_electric_station && isVehicleElectric
+                        ? "EV Charge: 9k / 10k RWF"
+                        : `${selectedMapLocation.hourly_rate || 300} RWF /hr`}
                     </Text>
                   </View>
                   <Text style={[styles.statDotSeparator, { color: theme.textSecondary }]}>•</Text>
@@ -5759,9 +6054,16 @@ export default function Home() {
                   </View>
                   <Text style={[styles.statDotSeparator, { color: theme.textSecondary }]}>•</Text>
                   <View style={styles.statBadgeItem}>
-                    <Ionicons name="car-outline" size={14} color={theme.textSecondary} />
-                    <Text style={[styles.statBadgeText, { color: theme.text }]}>
-                      {selectedMapLocation.available_spots ?? 0} Available
+                    <Ionicons
+                      name={selectedMapLocation.is_electric_station && isVehicleElectric ? "flash" : "car-outline"}
+                      size={14}
+                      color={selectedMapLocation.is_electric_station && isVehicleElectric ? theme.evGreen : theme.textSecondary}
+                    />
+                    <Text style={[styles.statBadgeText, { color: theme.text, fontWeight: "700" }]}>
+                      {selectedMapLocation.available_spots ?? 0}{" "}
+                      {selectedMapLocation.is_electric_station && isVehicleElectric
+                        ? "Charging Spots Available"
+                        : "Parking Spots Available"}
                     </Text>
                   </View>
                 </View>
@@ -5792,17 +6094,43 @@ export default function Home() {
                   style={[
                     styles.choosePlaceBtn,
                     {
-                      backgroundColor: theme.primaryBtnBg,
+                      backgroundColor: selectedMapLocation.is_electric_station && isVehicleElectric
+                        ? theme.evGreen
+                        : theme.primaryBtnBg,
                       shadowColor: theme.cardShadow,
                     },
                   ]}
                   onPress={() => {
                     setShowMapView(false);
-                    setSelectedParkForSheet(selectedMapLocation);
+                    if (selectedMapLocation.is_electric_station && isVehicleElectric) {
+                      router.push({
+                        pathname: "/ev_charging",
+                        params: {
+                          locationId: selectedMapLocation.id,
+                          bayNumber: "BAY-01",
+                          stationName: selectedMapLocation.name,
+                        },
+                      });
+                    } else {
+                      setSelectedParkForSheet(selectedMapLocation);
+                    }
                   }}
                   activeOpacity={0.88}
                 >
-                  <Text style={[styles.choosePlaceBtnText, { color: theme.primaryBtnText }]}>Choose Place</Text>
+                  <Text
+                    style={[
+                      styles.choosePlaceBtnText,
+                      {
+                        color: selectedMapLocation.is_electric_station && isVehicleElectric
+                          ? theme.evGreenText
+                          : theme.primaryBtnText,
+                      },
+                    ]}
+                  >
+                    {selectedMapLocation.is_electric_station && isVehicleElectric
+                      ? "Select Charging Spot"
+                      : "Select Parking Spot"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}

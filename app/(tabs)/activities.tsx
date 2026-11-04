@@ -42,6 +42,7 @@ import {
   ParkingHistoryRecord,
 } from "../services/parking";
 import { initiateMobilePayment } from "../services/mobilePayment";
+import ParkingPaymentQrModal from "../../components/ParkingPaymentQrModal";
 
 const { width } = Dimensions.get("window");
 
@@ -230,6 +231,7 @@ const Activities = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<"All" | "Active" | "Incomplete" | "Completed" | "Fines">("All");
   const [selectedInvoice, setSelectedInvoice] = useState<ParkingHistoryRecord | null>(null);
+  const [qrPassModalVisible, setQrPassModalVisible] = useState(false);
 
   // Hide tab bar when invoice modal is open
   useEffect(() => {
@@ -701,20 +703,49 @@ const Activities = () => {
             </View>
           ) : null}
 
-          <TouchableOpacity
-            style={[styles.activeFindVehicleBtn, { borderColor: theme.accent, backgroundColor: theme.surface }]}
-            onPress={() => {
-              Alert.alert(
-                "Find My Vehicle",
-                `Your vehicle (${activeTicket.plate}) is parked in Slot ${activeTicket.spaceNumber} at ${activeTicket.locationName}.`,
-                [{ text: "OK" }]
-              );
-            }}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="location-outline" size={16} color={theme.text} />
-            <Text style={[styles.activeFindVehicleBtnText, { color: theme.text }]}>Find My Vehicle</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
+            <TouchableOpacity
+              style={[
+                styles.activeFindVehicleBtn,
+                {
+                  flex: 1,
+                  marginTop: 0,
+                  borderColor: theme.border,
+                  backgroundColor: theme.surface,
+                },
+              ]}
+              onPress={() => setQrPassModalVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="qr-code-outline" size={16} color={theme.text} />
+              <Text style={[styles.activeFindVehicleBtnText, { color: theme.text }]}>
+                QR Gate Pass
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.activeFindVehicleBtn,
+                {
+                  flex: 1,
+                  marginTop: 0,
+                  borderColor: theme.border,
+                  backgroundColor: theme.surface,
+                },
+              ]}
+              onPress={() => {
+                Alert.alert(
+                  "Find My Vehicle",
+                  `Your vehicle (${activeTicket.plate}) is parked in Slot ${activeTicket.spaceNumber} at ${activeTicket.locationName}.`,
+                  [{ text: "OK" }]
+                );
+              }}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="location-outline" size={16} color={theme.text} />
+              <Text style={[styles.activeFindVehicleBtnText, { color: theme.text }]}>Find Vehicle</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Action Buttons Row: Extend Time & End Parking */}
@@ -1124,6 +1155,28 @@ const Activities = () => {
           </View>
         </View>
       </Modal>
+
+      {/* Active Parking Session QR Pass Modal */}
+      {activeTicket && (
+        <ParkingPaymentQrModal
+          visible={qrPassModalVisible}
+          onClose={() => setQrPassModalVisible(false)}
+          session={{
+            id: activeTicket.id,
+            bayNumber: activeTicket.spaceNumber,
+            plate: activeTicket.plate,
+            name: activeTicket.locationName,
+            cost: (activeTicket.durationHours || 1) * (activeTicket.hourlyRate || 300),
+            currency: "RWF",
+            receiptNumber: activeTicket.receiptNumber,
+            exitTime: new Date(
+              new Date(activeTicket.entryTime).getTime() +
+                Math.max(1, (activeTicket.durationHours || 1) * 3600) * 1000
+            ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+            duration: `${activeTicket.durationHours || 1} Hours`,
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 };
