@@ -88,6 +88,12 @@ import { ParkingHistoryRecord } from "../recent_parkings";
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const width = SCREEN_WIDTH;
 
+const sliceAreaName = (name?: string, maxLen = 22): string => {
+  if (!name) return "";
+  const trimmed = name.trim();
+  return trimmed.length > maxLen ? `${trimmed.slice(0, maxLen).trim()}...` : trimmed;
+};
+
 const KIGALI_REGION = {
   latitude: -1.9536,
   longitude: 30.0606,
@@ -4097,10 +4103,10 @@ export default function Home() {
               <View style={styles.sheetHeaderRow}>
                 <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
                   <Text style={[styles.sheetMainTitle, { color: theme.text }]} numberOfLines={1}>
-                    {selectedParkForSheet?.name || "Parking Facility"}
+                    {sliceAreaName(selectedParkForSheet?.name || "Parking Facility", 24)}
                   </Text>
                   <Text style={[styles.sheetSubTitle, { color: theme.textSecondary }]} numberOfLines={1}>
-                    {selectedParkForSheet?.address || ""}
+                    {sliceAreaName(selectedParkForSheet?.address || "", 30)}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -4175,8 +4181,8 @@ export default function Home() {
               {/* Zone Description Subheader & 2D/3D Aerial Toggle */}
               <View style={{ paddingHorizontal: 20, marginBottom: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
                 <View style={{ flex: 1, marginRight: 10 }}>
-                  <Text style={{ fontSize: 13, fontWeight: "500", color: theme.text }}>
-                    {currentSheetLot.title}
+                  <Text style={{ fontSize: 13, fontWeight: "600", color: theme.text }} numberOfLines={1}>
+                    {sliceAreaName(currentSheetLot.title, 22)}
                   </Text>
                   <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
                     {currentSheetLot.description}
@@ -5865,10 +5871,10 @@ export default function Home() {
               <View style={styles.sheetHeaderRow}>
                 <View style={{ flex: 1, minWidth: 0, marginRight: 12 }}>
                   <Text style={[styles.sheetMainTitle, { color: theme.text }]} numberOfLines={1}>
-                    {selectedMapLocation?.name || "Parking Station"}
+                    {sliceAreaName(selectedMapLocation?.name || "Parking Station", 24)}
                   </Text>
                   <Text style={[styles.sheetSubTitle, { color: theme.textSecondary }]} numberOfLines={1}>
-                    {selectedMapLocation?.address || ""}
+                    {sliceAreaName(selectedMapLocation?.address || "", 30)}
                   </Text>
                 </View>
                 <TouchableOpacity

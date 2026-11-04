@@ -55,6 +55,12 @@ import { initiateMobilePayment } from "../services/mobilePayment";
 
 const { width } = Dimensions.get("window");
 
+const sliceAreaName = (name?: string, maxLen = 22): string => {
+  if (!name) return "";
+  const trimmed = name.trim();
+  return trimmed.length > maxLen ? `${trimmed.slice(0, maxLen).trim()}...` : trimmed;
+};
+
 const DEFAULT_REGION = {
   latitude: -1.9536,
   longitude: 30.0606,
@@ -870,7 +876,7 @@ const EVChargers = () => {
               <View style={{ flex: 1, marginRight: 12 }}>
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                   <Text style={[styles.sheetStationTitle, { color: theme.text }]} numberOfLines={1}>
-                    {sheetStation?.name || "EV Charging Station"}
+                    {sliceAreaName(sheetStation?.name || "EV Charging Station", 22)}
                   </Text>
                   <View style={[styles.liveFeedBadge, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
                     <View style={[styles.liveDot, { backgroundColor: theme.evGreen }]} />
@@ -878,7 +884,7 @@ const EVChargers = () => {
                   </View>
                 </View>
                 <Text style={[styles.sheetStationAddress, { color: theme.textSecondary }]} numberOfLines={1}>
-                  {sheetStation?.address || "Kigali, Rwanda"}
+                  {sliceAreaName(sheetStation?.address || "Kigali, Rwanda", 30)}
                 </Text>
               </View>
 
@@ -935,8 +941,8 @@ const EVChargers = () => {
             {/* Zone Description Subheader & 2D / 3D Aerial View Switcher */}
             <View style={{ paddingHorizontal: 20, marginBottom: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <View style={{ flex: 1, marginRight: 10 }}>
-                <Text style={{ fontSize: 13, fontWeight: "500", color: theme.text }}>
-                  {currentLot.title}
+                <Text style={{ fontSize: 13, fontWeight: "600", color: theme.text }} numberOfLines={1}>
+                  {sliceAreaName(currentLot.title, 22)}
                 </Text>
                 <Text style={{ fontSize: 11, color: theme.textSecondary, marginTop: 2 }}>
                   {currentLot.description}

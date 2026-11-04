@@ -222,8 +222,8 @@ export const AerialParkingLot3D: React.FC<Props> = ({
               styles.stallNumber,
               {
                 color: isVacant ? theme.text : theme.textSecondary,
-                fontWeight: "600",
-                fontSize: compact ? 11 : 12,
+                fontWeight: "700",
+                fontSize: compact ? 11 : 13,
               },
             ]}
           >
@@ -248,21 +248,21 @@ export const AerialParkingLot3D: React.FC<Props> = ({
         </View>
 
         {/* Stall Center — Displays authentic realistic car when occupied */}
-        <View style={[styles.stallCenterContent, compact && { height: 46, justifyContent: "center" }]}>
+        <View style={styles.stallCenterContent}>
           {space.is_occupied ? (
             <View style={{ alignItems: "center", justifyContent: "center" }}>
               {spaceLayout === "parallel" ? (
                 <HorizontalUltraRealisticCar
                   color={carVariant}
-                  width={compact ? 52 : 76}
-                  height={compact ? 26 : 38}
+                  width={compact ? 66 : 78}
+                  height={compact ? 32 : 38}
                 />
               ) : (
                 <View style={{ transform: [{ rotate: `${spaceAngle}deg` }] }}>
                   <VerticalUltraRealisticCar
                     color={carVariant}
-                    width={compact ? 28 : 40}
-                    height={compact ? 48 : 72}
+                    width={compact ? 30 : 38}
+                    height={compact ? 56 : 74}
                   />
                 </View>
               )}
@@ -290,24 +290,26 @@ export const AerialParkingLot3D: React.FC<Props> = ({
           )}
         </View>
 
-        {/* Stall Footer */}
-        <View style={[styles.stallFooter, compact && { marginTop: 1 }]}>
-          {space.is_occupied ? (
-            <Text style={[styles.platePlate, { color: theme.textSecondary, fontSize: compact ? 8 : 9 }]} numberOfLines={1}>
-              {space.current_vehicle_plate || (isEvStall ? "Charging" : "Occupied")}
-            </Text>
-          ) : (
-            <View style={styles.priceRow}>
-              <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary, fontSize: compact ? 8 : 9, fontWeight: "500" }]} numberOfLines={1}>
-                {isEvStall
-                  ? "Free Park"
-                  : space.price_per_hour_rwf
-                    ? `${space.price_per_hour_rwf} RWF/h`
-                    : "Standard Bay"}
+        {/* Stall Footer - clean and minimal */}
+        {!compact && (
+          <View style={styles.stallFooter}>
+            {space.is_occupied ? (
+              <Text style={[styles.platePlate, { color: theme.textSecondary, fontSize: 9 }]} numberOfLines={1}>
+                {space.current_vehicle_plate || (isEvStall ? "Charging" : "Occupied")}
               </Text>
-            </View>
-          )}
-        </View>
+            ) : (
+              <View style={styles.priceRow}>
+                <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary, fontSize: 9, fontWeight: "500" }]} numberOfLines={1}>
+                  {isEvStall
+                    ? "Free Park"
+                    : space.price_per_hour_rwf
+                      ? `${space.price_per_hour_rwf} RWF/h`
+                      : "Standard"}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {isSelected && (
           <View style={[styles.selectedCheckDot, { backgroundColor: isEvStall ? theme.evGreen : theme.text, top: 4, right: 4, width: 14, height: 14, borderRadius: 7 }]}>
@@ -802,7 +804,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   stallBox: {
-    width: 112,
+    width: 116,
     height: 154,
     borderRadius: 14,
     padding: 8,
@@ -810,17 +812,20 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   stallBoxCompact: {
-    width: 90,
-    height: 104,
-    padding: 6,
+    width: 96,
+    height: 118,
+    paddingHorizontal: 7,
+    paddingVertical: 7,
     borderRadius: 12,
+    justifyContent: "space-between",
+    position: "relative",
   },
   stallOblique: {
     transform: [{ skewX: "-12deg" }],
   },
   stallParallel: {
-    width: 140,
-    height: 106,
+    width: 136,
+    height: 104,
   },
   stallWide: {
     width: 132,
