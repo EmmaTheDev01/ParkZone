@@ -170,7 +170,10 @@ export const AerialParkingLot3D: React.FC<Props> = ({
 
     const carVariant =
       space.car_color ||
-      resolveParkedCarColor(`${space.location_id}-${space.zone_code}-${space.space_number}`);
+      resolveParkedCarColor(
+        `${space.location_id}-${space.zone_code}-${space.space_number}`,
+        space.current_vehicle_plate
+      );
 
     return (
       <TouchableOpacity

@@ -68,14 +68,32 @@ export const PARKED_CAR_COLOR_VARIANTS = [
     "glacier",
 ] as const;
 
-export function resolveParkedCarColor(seed?: string | null): string {
-    const key = (seed || "parkzone-car").trim();
+let cachedUserCarColors: string[] = [];
+const cachedPlateColorMap = new Map<string, string>();
+
+export function setUserCarColorsCache(colors: string[], plateMap?: Record<string, string>) {
+    if (colors && colors.length > 0) {
+        cachedUserCarColors = Array.from(new Set(colors.filter(Boolean)));
+    }
+    if (plateMap) {
+        Object.entries(plateMap).forEach(([plate, color]) => {
+            if (plate && color) cachedPlateColorMap.set(plate.trim().toUpperCase(), color.trim());
+        });
+    }
+}
+
+export function resolveParkedCarColor(seed?: string | null, plate?: string | null): string {
+    if (plate && cachedPlateColorMap.has(plate.trim().toUpperCase())) {
+        return cachedPlateColorMap.get(plate.trim().toUpperCase())!;
+    }
+    const colorPool = cachedUserCarColors.length > 0 ? cachedUserCarColors : PARKED_CAR_COLOR_VARIANTS;
+    const key = (seed || plate || "parkzone-car").trim();
     let hash = 2166136261;
     for (let i = 0; i < key.length; i += 1) {
         hash ^= key.charCodeAt(i);
         hash = Math.imul(hash, 16777619);
     }
-    return PARKED_CAR_COLOR_VARIANTS[Math.abs(hash) % PARKED_CAR_COLOR_VARIANTS.length];
+    return colorPool[Math.abs(hash) % colorPool.length];
 }
 
 export function getZoneLotMeta(zoneCode: string, isEvStation = false): {
@@ -799,6 +817,7 @@ export async function fetchSpotsForLocation(
         chargers,
         { data: activeTickets },
         { data: activeEvSessions },
+        { data: dbVehicles },
     ] = await Promise.all([
         supabase
             .from("parking_spaces")
@@ -821,6 +840,9 @@ export async function fetchSpotsForLocation(
             .select("bay_number, vehicle_plate")
             .eq("location_id", locationId)
             .eq("status", "active"),
+        supabase
+            .from("vehicles")
+            .select("plate_number, color, user_id, make_model"),
     ]);
 
     if (spacesRes.error) {
@@ -839,6 +861,22 @@ export async function fetchSpotsForLocation(
 
     const occupiedSpaceIds = new Map<string, string>();
     const occupiedBayNumbers = new Map<string, string>();
+
+    const fetchedUserColors: string[] = [];
+    (dbVehicles || []).forEach((v: any) => {
+        if (v.plate_number && v.color) {
+            const cleanPlate = v.plate_number.trim().toUpperCase();
+            const cleanColor = v.color.trim();
+            cachedPlateColorMap.set(cleanPlate, cleanColor);
+        }
+        if (v.color && v.color.trim()) {
+            fetchedUserColors.push(v.color.trim());
+        }
+    });
+
+    if (fetchedUserColors.length > 0) {
+        setUserCarColorsCache(fetchedUserColors);
+    }
 
     (activeTickets || []).forEach((t: any) => {
         if (t.space_id) occupiedSpaceIds.set(t.space_id, t.vehicle_plate || "PARKED");
@@ -925,7 +963,10 @@ export async function fetchSpotsForLocation(
                     : locationHourlyRate,
             price_per_kwh_rwf: priceKwh,
             topology: s.topology || (s.space_type === "handicap" ? "wide" : locationTopology),
-            car_color: resolveParkedCarColor(`${locationId}-${normalizedZone}-${s.space_number}`),
+            car_color: resolveParkedCarColor(
+                `${locationId}-${normalizedZone}-${s.space_number}`,
+                s.current_vehicle_plate || activeTicketPlate || occupiedBayNumbers.get(s.space_number.toUpperCase()) || null
+            ),
             spot_label: spotLabel,
         };
     });
@@ -974,7 +1015,10 @@ export async function fetchSpotsForLocation(
                     price_per_hour_rwf: 0,
                     price_per_kwh_rwf: ch.price_per_kwh || 250,
                     topology: locationTopology,
-                    car_color: resolveParkedCarColor(`${locationId}-${zn}-${bayNum}`),
+                    car_color: resolveParkedCarColor(
+                        `${locationId}-${zn}-${bayNum}`,
+                        occupiedBayNumbers.get(bayNum.toUpperCase()) || null
+                    ),
                     spot_label: `${ch.max_output_kw || 120}kW ${(ch.max_output_kw || 120) >= 50 ? "DC" : "AC"}`,
                 });
             });
@@ -1028,7 +1072,7 @@ export async function fetchSpotsForLocation(
                 price_per_hour_rwf: spaceType === "ev" ? 0 : locationHourlyRate,
                 price_per_kwh_rwf: fallbackCharger?.price_per_kwh,
                 topology: spaceType === "handicap" ? "wide" : locationTopology,
-                car_color: resolveParkedCarColor(`${locationId}-${zn}-${bayNum}`),
+                car_color: resolveParkedCarColor(`${locationId}-${zn}-${bayNum}`, activePlate),
                 spot_label: spotLabel,
             });
         }
@@ -1066,9 +1110,16 @@ export async function fetchSpotsForLocation(
             for (const idx of sortedCandidates) {
                 if (currentOccupied >= targetOccupied) break;
                 if (zoneList[idx] && !zoneList[idx].is_occupied) {
+                    const candidateSpace = zoneList[idx];
                     zoneList[idx] = {
-                        ...zoneList[idx],
+                        ...candidateSpace,
                         is_occupied: true,
+                        car_color:
+                            candidateSpace.car_color ||
+                            resolveParkedCarColor(
+                                `${locationId}-${zn}-${candidateSpace.space_number}`,
+                                candidateSpace.current_vehicle_plate
+                            ),
                     };
                     currentOccupied += 1;
                 }

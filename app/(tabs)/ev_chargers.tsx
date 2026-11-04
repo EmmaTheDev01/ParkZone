@@ -31,6 +31,7 @@ import {
   fetchWalletBalance,
   issueZeroContactCitation,
   ParkingSpace,
+  resolveParkedCarColor,
   subscribeToEvChargersRealtime,
   subscribeToSpacesRealtime,
   updateWalletBalance,
@@ -263,7 +264,7 @@ const EVChargers = () => {
       id: s.id,
       bayNumber: s.space_number,
       isOccupied: s.is_occupied,
-      carColor: "obsidian",
+      carColor: s.car_color || resolveParkedCarColor(`${sheetStation?.id}-${s.zone_code}-${s.space_number}`, s.current_vehicle_plate),
       spotType: s.watt_power_kw ? `${s.watt_power_kw}kW` : s.space_type === "ev" ? "EV Charger" : "Bay",
     }));
     const mid = Math.ceil(mapped.length / 2);
@@ -1064,7 +1065,10 @@ const EVChargers = () => {
                             { backgroundColor: theme.background, borderColor: theme.border },
                           ]}
                         >
-                          <HorizontalUltraRealisticCar color={spot.carColor} />
+                          <Text style={{ position: "absolute", top: 4, left: 8, fontSize: 10, fontWeight: "600", color: theme.textSecondary }}>
+                            Bay {spot.bayNumber}
+                          </Text>
+                          <HorizontalUltraRealisticCar color={spot.carColor} width={56} height={28} />
                           <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
                             <Ionicons name="flash" size={8} color="#10B981" />
                             <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>
@@ -1140,7 +1144,10 @@ const EVChargers = () => {
                             { backgroundColor: theme.background, borderColor: theme.border },
                           ]}
                         >
-                          <HorizontalUltraRealisticCar color={spot.carColor} />
+                          <Text style={{ position: "absolute", top: 4, left: 8, fontSize: 10, fontWeight: "600", color: theme.textSecondary }}>
+                            Bay {spot.bayNumber}
+                          </Text>
+                          <HorizontalUltraRealisticCar color={spot.carColor} width={56} height={28} />
                           <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
                             <Ionicons name="flash" size={8} color="#10B981" />
                             <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>

@@ -61,6 +61,7 @@ import {
   verifyPlateStatus,
   subscribeToSpacesRealtime,
   resolveParkedCarColor,
+  setUserCarColorsCache,
 } from "../services/parking";
 import { VoiceGuidance } from "../services/voiceGuidance";
 import { initiateMobilePayment } from "../services/mobilePayment";
@@ -695,7 +696,12 @@ export default function Home() {
       isOccupied: s.is_occupied,
       spaceType: s.space_type,
       topology: s.topology || (s.space_type === "handicap" ? "wide" : selectedParkForSheet?.layout_topology || "perpendicular"),
-      carColor: s.car_color || resolveParkedCarColor(`${selectedParkForSheet?.id}-${s.zone_code}-${s.space_number}`),
+      carColor:
+        s.car_color ||
+        resolveParkedCarColor(
+          `${selectedParkForSheet?.id}-${s.zone_code}-${s.space_number}`,
+          s.current_vehicle_plate
+        ),
       spotType:
         s.spot_label ||
         (s.space_type === "ev"
@@ -997,6 +1003,17 @@ export default function Home() {
         const resolvedAvatar = cachedAvatar || profileRes?.data?.avatar_url || "";
         setAvatarUrl(resolvedAvatar);
         setSelectedVehicle(vehicles[0] || null);
+        if (vehicles && vehicles.length > 0) {
+          const userColors: string[] = [];
+          const plateMap: Record<string, string> = {};
+          vehicles.forEach((v: any) => {
+            if (v.color) userColors.push(v.color);
+            if (v.plate_number && v.color) {
+              plateMap[v.plate_number.trim().toUpperCase()] = v.color.trim();
+            }
+          });
+          setUserCarColorsCache(userColors, plateMap);
+        }
         setParkingBalance(balance.toLocaleString());
         setRecentParkingsList(history as ParkingHistoryRecord[]);
         setNotificationsList(
@@ -1951,14 +1968,19 @@ export default function Home() {
                       const spaceTopo = sp.topology || selectedTopology || "perpendicular";
 
                       if (sp.is_occupied) {
-                        const carHex = sp.car_color || resolveParkedCarColor(`${selectedLocation?.id}-${sp.zone_code}-${sp.space_number}`);
+                        const carHex =
+                          sp.car_color ||
+                          resolveParkedCarColor(
+                            `${selectedLocation?.id}-${sp.zone_code}-${sp.space_number}`,
+                            sp.current_vehicle_plate
+                          );
                         return (
                           <View key={sp.id} style={[styles.occupiedBayWrapper, spaceTopo === "wide" && { borderWidth: 1.5, borderColor: theme.borderStrong }]}>
                             <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{sp.space_number}</Text>
                             {spaceTopo === "parallel" ? (
-                              <HorizontalUltraRealisticCar color={carHex} width={76} height={38} />
+                              <HorizontalUltraRealisticCar color={carHex} width={58} height={28} />
                             ) : (
-                              <VerticalUltraRealisticCar color={carHex} width={42} height={80} />
+                              <VerticalUltraRealisticCar color={carHex} width={28} height={50} />
                             )}
                           </View>
                         );
@@ -2019,14 +2041,19 @@ export default function Home() {
                       const spaceTopo = sp.topology || selectedTopology || "perpendicular";
 
                       if (sp.is_occupied) {
-                        const carHex = sp.car_color || resolveParkedCarColor(`${selectedLocation?.id}-${sp.zone_code}-${sp.space_number}`);
+                        const carHex =
+                          sp.car_color ||
+                          resolveParkedCarColor(
+                            `${selectedLocation?.id}-${sp.zone_code}-${sp.space_number}`,
+                            sp.current_vehicle_plate
+                          );
                         return (
                           <View key={sp.id} style={[styles.occupiedBayWrapper, spaceTopo === "wide" && { borderWidth: 1.5, borderColor: theme.borderStrong }]}>
                             <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{sp.space_number}</Text>
                             {spaceTopo === "parallel" ? (
-                              <HorizontalUltraRealisticCar color={carHex} width={76} height={38} />
+                              <HorizontalUltraRealisticCar color={carHex} width={58} height={28} />
                             ) : (
-                              <VerticalUltraRealisticCar color={carHex} width={42} height={80} />
+                              <VerticalUltraRealisticCar color={carHex} width={28} height={50} />
                             )}
                           </View>
                         );
@@ -4277,7 +4304,8 @@ export default function Home() {
                                 }}
                                 style={styles.occupiedBayGraphicCard}
                               >
-                                <HorizontalUltraRealisticCar color={spot.carColor} />
+                                <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{spot.bayNumber}</Text>
+                                <HorizontalUltraRealisticCar color={spot.carColor} width={58} height={28} />
                                 {(spot.spaceType === "ev" || isEvLot) && (
                                   <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
                                     <Ionicons name="flash" size={8} color="#10B981" />
@@ -4360,7 +4388,8 @@ export default function Home() {
                                 }}
                                 style={styles.occupiedBayGraphicCard}
                               >
-                                <HorizontalUltraRealisticCar color={spot.carColor} />
+                                <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{spot.bayNumber}</Text>
+                                <HorizontalUltraRealisticCar color={spot.carColor} width={58} height={28} />
                                 {(spot.spaceType === "ev" || isEvLot) && (
                                   <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
                                     <Ionicons name="flash" size={8} color="#10B981" />
@@ -6143,6 +6172,7 @@ const styles = StyleSheet.create({
     left: 8,
     fontSize: 10,
     fontWeight: "500",
+    zIndex: 2,
   },
   freeBaySlot: {
     height: 80,
