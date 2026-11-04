@@ -1022,8 +1022,12 @@ export default function Home() {
     setMapSearch("");
     if (mapRef.current) {
       const allCoords = [
-        ...locations.map((l) => ({ latitude: Number(l.latitude), longitude: Number(l.longitude) })),
-        ...evStations.map((e) => ({ latitude: e.latitude, longitude: e.longitude })),
+        ...locations
+          .filter((l) => isVehicleElectric || !l.is_electric_station)
+          .map((l) => ({ latitude: Number(l.latitude), longitude: Number(l.longitude) })),
+        ...(isVehicleElectric
+          ? evStations.map((e) => ({ latitude: e.latitude, longitude: e.longitude }))
+          : []),
       ].filter((c) => !isNaN(c.latitude) && !isNaN(c.longitude) && c.latitude !== 0);
 
       if (allCoords.length > 0) {
@@ -1035,7 +1039,7 @@ export default function Home() {
         mapRef.current.animateToRegion(KIGALI_REGION, 600);
       }
     }
-  }, [locations, evStations]);
+  }, [locations, evStations, isVehicleElectric]);
 
   const [mapBookmarked, setMapBookmarked] = useState<Record<string, boolean>>({});
 
@@ -5547,11 +5551,19 @@ export default function Home() {
                   </>
                 )}
 
-                {/* Rate Bubble Markers for All Parking Places in System (Filtered by vehicle eligibility and area) */}
-                {(mapCategory === "all" || mapCategory === "car" || mapCategory === "truck" || mapCategory === "bike" || mapCategory === "bus") &&
+                {/* Rate Bubble Markers for Parking Places in System (Filtered by vehicle eligibility and area) */}
+                {((isVehicleElectric && (mapCategory === "car" || mapCategory === "all")) ||
+                  (!isVehicleElectric && (mapCategory === "all" || mapCategory === "car" || mapCategory === "truck" || mapCategory === "bike" || mapCategory === "bus"))) &&
                   eligibleLocations
                     .filter((loc) => {
                       if (mapAreaFilter !== "All Areas" && loc.zone_code && loc.zone_code !== mapAreaFilter) {
+                        return false;
+                      }
+                      // In Parking Only mode or for standard vehicles, strictly exclude electric stations
+                      if (isVehicleElectric && mapCategory === "car" && loc.is_electric_station) {
+                        return false;
+                      }
+                      if (!isVehicleElectric && loc.is_electric_station) {
                         return false;
                       }
                       if (!mapSearch) return true;
@@ -5615,8 +5627,8 @@ export default function Home() {
                       );
                     })}
 
-                {/* Rate Bubble Markers for EV Stations: Shown in 'ev' category or when viewing 'all' areas */}
-                {(mapCategory === "all" || mapCategory === "ev") &&
+                {/* Rate Bubble Markers for EV Stations: Shown strictly for EV vehicles in 'ev' or 'all' mode */}
+                {isVehicleElectric && (mapCategory === "all" || mapCategory === "ev") &&
                   evStations
                     .filter((ev) => {
                       if (!mapSearch) return true;
@@ -5760,20 +5772,24 @@ export default function Home() {
               >
                 <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
                   <Ionicons
-                    name={isVehicleElectric ? "flash" : "car-outline"}
+                    name={isVehicleElectric ? (mapCategory === "car" ? "car-sport" : "flash") : "car-outline"}
                     size={12}
-                    color={isVehicleElectric ? theme.evGreen : theme.textSecondary}
+                    color={isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary}
                   />
                   <Text
                     style={{
                       fontSize: 10,
                       fontWeight: "600",
-                      color: isVehicleElectric ? theme.evGreen : theme.textSecondary,
+                      color: isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary,
                     }}
                   >
                     {isVehicleElectric
-                      ? "Electric Vehicle • Available Charging Spots"
-                      : "Standard Vehicle • Available Parking Spaces"}
+                      ? mapCategory === "car"
+                        ? "Electric Vehicle • Parking Only Mode"
+                        : mapCategory === "all"
+                          ? "Electric Vehicle • All Charging & Parking Spots"
+                          : "Electric Vehicle • Available Charging Areas"
+                      : "Standard Vehicle • Available Parking Lots"}
                   </Text>
                 </View>
                 <View
@@ -5781,11 +5797,11 @@ export default function Home() {
                     paddingHorizontal: 6,
                     paddingVertical: 2,
                     borderRadius: 8,
-                    backgroundColor: isVehicleElectric
+                    backgroundColor: isVehicleElectric && mapCategory !== "car"
                       ? theme.evGreenSoft
                       : theme.surface,
                     borderWidth: 1,
-                    borderColor: isVehicleElectric
+                    borderColor: isVehicleElectric && mapCategory !== "car"
                       ? theme.evGreenBorder
                       : theme.border,
                   }}
@@ -5794,10 +5810,16 @@ export default function Home() {
                     style={{
                       fontSize: 8,
                       fontWeight: "700",
-                      color: isVehicleElectric ? theme.evGreen : theme.textSecondary,
+                      color: isVehicleElectric && mapCategory !== "car" ? theme.evGreen : theme.textSecondary,
                     }}
                   >
-                    {isVehicleElectric ? "EV CHARGING" : "PARKING"}
+                    {isVehicleElectric
+                      ? mapCategory === "car"
+                        ? "PARKING ONLY"
+                        : mapCategory === "all"
+                          ? "ALL SPOTS"
+                          : "EV CHARGING"
+                      : "PARKING LOTS"}
                   </Text>
                 </View>
               </View>
@@ -5811,13 +5833,13 @@ export default function Home() {
               >
                 {(isVehicleElectric
                   ? [
-                      { id: "all", label: "All Areas", icon: "globe-outline" },
-                      { id: "ev", label: "EV Hubs", icon: "flash" },
+                      { id: "ev", label: "EV Charging", icon: "flash" },
                       { id: "car", label: "Parking Only", icon: "car-sport" },
+                      { id: "all", label: "All Spots", icon: "globe-outline" },
                     ]
                   : [
+                      { id: "car", label: "Parking Lots", icon: "car-sport" },
                       { id: "all", label: "All Areas", icon: "globe-outline" },
-                      { id: "car", label: "Car Parking", icon: "car-sport" },
                       { id: "bike", label: "Bike", icon: "bicycle" },
                       { id: "bus", label: "Bus", icon: "bus" },
                       { id: "truck", label: "Truck", icon: "cube" },
