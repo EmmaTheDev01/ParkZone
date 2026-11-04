@@ -100,7 +100,7 @@ export const EvBayDetailModal: React.FC<Props> = ({
                 ]}
               />
               <Text style={[styles.title, { color: theme.text }]}>
-                Bay {space.space_number}
+                {space.space_number}
               </Text>
               <View
                 style={[

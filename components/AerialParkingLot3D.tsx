@@ -507,7 +507,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
             <View style={styles.hickCardHeader}>
               <View style={styles.hickCardHeaderLeft}>
                 <Text style={[styles.hickSlotTitle, { color: theme.text }]}>
-                  Bay {selectedSpace.space_number}
+                  {selectedSpace.space_number}
                   {selectedSpace.zone_code ? ` (${selectedSpace.zone_code})` : ""}
                 </Text>
                 <View style={styles.hickStatusRow}>
@@ -610,7 +610,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 >
                   <Ionicons name="navigate" size={16} color={theme.primaryBtnText} />
                   <Text style={[styles.hickDirectBtnText, { color: theme.primaryBtnText }]}>
-                    Animate Car to Bay {selectedSpace.space_number}
+                    Animate Car to Space {selectedSpace.space_number}
                   </Text>
                 </TouchableOpacity>
               ) : (

@@ -775,7 +775,7 @@ const EVChargers = () => {
                         Charge Rate
                       </Text>
                       <Text style={[styles.metricValText, { color: theme.evGreen }]}>
-                        {item.tariff || "9k–10k RWF"}
+                        {item.tariff || "250 RWF/kWh"}
                       </Text>
                     </View>
                   </View>
@@ -1062,16 +1062,16 @@ const EVChargers = () => {
                           onPress={() => setInspectedSpace(matchedSpace)}
                           style={[
                             styles.spotOccupiedBox,
-                            { backgroundColor: theme.background, borderColor: theme.border },
+                            { backgroundColor: theme.surface, borderColor: theme.border },
                           ]}
                         >
-                          <Text style={{ position: "absolute", top: 4, left: 8, fontSize: 10, fontWeight: "600", color: theme.textSecondary }}>
-                            Bay {spot.bayNumber}
+                          <Text style={[styles.spotSlotNumber, { color: theme.textSecondary }]}>
+                            {spot.bayNumber}
                           </Text>
-                          <HorizontalUltraRealisticCar color={spot.carColor} width={56} height={28} />
-                          <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                          <HorizontalUltraRealisticCar color={spot.carColor} width={68} height={34} />
+                          <View style={styles.chargingBadge}>
                             <Ionicons name="flash" size={8} color="#10B981" />
-                            <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>
+                            <Text style={styles.chargingBadgeText}>CHARGING</Text>
                           </View>
                         </TouchableOpacity>
                       );
@@ -1083,8 +1083,8 @@ const EVChargers = () => {
                         style={[
                           styles.spotAvailableCard,
                           {
-                            backgroundColor: theme.background,
-                            borderColor: isSelected ? theme.text : theme.border,
+                            backgroundColor: isSelected ? theme.surfaceMuted : theme.surface,
+                            borderColor: isSelected ? theme.evGreen : theme.border,
                             borderWidth: isSelected ? 2 : 1,
                           },
                         ]}
@@ -1094,26 +1094,27 @@ const EVChargers = () => {
                         }}
                         activeOpacity={0.8}
                       >
-                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                        <View style={styles.spotCardHeader}>
                           <Text style={[styles.spotNumberText, { color: theme.text }]}>
-                            Bay {spot.bayNumber}
+                            {spot.bayNumber}
                           </Text>
-                          <View style={[styles.livePulseMiniDot, { backgroundColor: theme.evGreen }]} />
+                          {isSelected ? (
+                            <View style={[styles.selectedCheckDot, { backgroundColor: theme.evGreen }]}>
+                              <Ionicons name="checkmark" size={10} color={theme.evGreenText} />
+                            </View>
+                          ) : (
+                            <View style={[styles.livePulseMiniDot, { backgroundColor: theme.evGreen }]} />
+                          )}
                         </View>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 }}>
-                          <Ionicons name="flash" size={10} color={theme.evGreen} />
-                          <Text style={{ fontSize: 10, fontWeight: "500", color: theme.evGreen }}>
-                            {spot.spotType || "DC Fast"}
+                        <View style={styles.spotPowerRow}>
+                          <Ionicons name="flash" size={11} color={theme.evGreen} />
+                          <Text style={[styles.spotPowerText, { color: theme.evGreen }]}>
+                            {spot.spotType || "Available"}
                           </Text>
                         </View>
-                        <Text style={{ fontSize: 9.5, fontWeight: "500", color: theme.textSecondary, marginTop: 2 }}>
-                          9k–10k RWF • 0 Park
+                        <Text style={[styles.spotStatusSub, { color: theme.textSecondary }]}>
+                          Available
                         </Text>
-                        {isSelected && (
-                          <View style={[styles.selectedCheckDot, { backgroundColor: theme.evGreen }]}>
-                            <Ionicons name="checkmark" size={10} color={theme.evGreenText} />
-                          </View>
-                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -1141,16 +1142,16 @@ const EVChargers = () => {
                           onPress={() => setInspectedSpace(matchedSpace)}
                           style={[
                             styles.spotOccupiedBox,
-                            { backgroundColor: theme.background, borderColor: theme.border },
+                            { backgroundColor: theme.surface, borderColor: theme.border },
                           ]}
                         >
-                          <Text style={{ position: "absolute", top: 4, left: 8, fontSize: 10, fontWeight: "600", color: theme.textSecondary }}>
-                            Bay {spot.bayNumber}
+                          <Text style={[styles.spotSlotNumber, { color: theme.textSecondary }]}>
+                            {spot.bayNumber}
                           </Text>
-                          <HorizontalUltraRealisticCar color={spot.carColor} width={56} height={28} />
-                          <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                          <HorizontalUltraRealisticCar color={spot.carColor} width={68} height={34} />
+                          <View style={styles.chargingBadge}>
                             <Ionicons name="flash" size={8} color="#10B981" />
-                            <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>
+                            <Text style={styles.chargingBadgeText}>CHARGING</Text>
                           </View>
                         </TouchableOpacity>
                       );
@@ -1162,8 +1163,8 @@ const EVChargers = () => {
                         style={[
                           styles.spotAvailableCard,
                           {
-                            backgroundColor: theme.background,
-                            borderColor: isSelected ? theme.text : theme.border,
+                            backgroundColor: isSelected ? theme.surfaceMuted : theme.surface,
+                            borderColor: isSelected ? theme.evGreen : theme.border,
                             borderWidth: isSelected ? 2 : 1,
                           },
                         ]}
@@ -1173,26 +1174,27 @@ const EVChargers = () => {
                         }}
                         activeOpacity={0.8}
                       >
-                        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", width: "100%" }}>
+                        <View style={styles.spotCardHeader}>
                           <Text style={[styles.spotNumberText, { color: theme.text }]}>
-                            Bay {spot.bayNumber}
+                            {spot.bayNumber}
                           </Text>
-                          <View style={[styles.livePulseMiniDot, { backgroundColor: theme.evGreen }]} />
+                          {isSelected ? (
+                            <View style={[styles.selectedCheckDot, { backgroundColor: theme.evGreen }]}>
+                              <Ionicons name="checkmark" size={10} color={theme.evGreenText} />
+                            </View>
+                          ) : (
+                            <View style={[styles.livePulseMiniDot, { backgroundColor: theme.evGreen }]} />
+                          )}
                         </View>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, marginTop: 4 }}>
-                          <Ionicons name="flash" size={10} color={theme.evGreen} />
-                          <Text style={{ fontSize: 10, fontWeight: "500", color: theme.evGreen }}>
-                            {spot.spotType || "DC Fast"}
+                        <View style={styles.spotPowerRow}>
+                          <Ionicons name="flash" size={11} color={theme.evGreen} />
+                          <Text style={[styles.spotPowerText, { color: theme.evGreen }]}>
+                            {spot.spotType || "Available"}
                           </Text>
                         </View>
-                        <Text style={{ fontSize: 9.5, fontWeight: "500", color: theme.textSecondary, marginTop: 2 }}>
-                          9k–10k RWF • 0 Park
+                        <Text style={[styles.spotStatusSub, { color: theme.textSecondary }]}>
+                          Available
                         </Text>
-                        {isSelected && (
-                          <View style={[styles.selectedCheckDot, { backgroundColor: theme.evGreen }]}>
-                            <Ionicons name="checkmark" size={10} color={theme.evGreenText} />
-                          </View>
-                        )}
                       </TouchableOpacity>
                     );
                   })}
@@ -2070,38 +2072,76 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   spotAvailableCard: {
-    height: 58,
-    borderRadius: 16,
+    height: 84,
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: "space-between",
+    position: "relative",
+  },
+  selectedCheckDot: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  spotSlotNumber: {
+    position: "absolute",
+    top: 8,
+    left: 10,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  spotCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  spotNumberText: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  spotPowerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 2,
+  },
+  spotPowerText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  spotStatusSub: {
+    fontSize: 10,
+    fontWeight: "500",
+  },
+  spotOccupiedBox: {
+    height: 84,
+    borderRadius: 14,
+    borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
   },
-  selectedCheckDot: {
+  chargingBadge: {
     position: "absolute",
-    top: 4,
-    right: 4,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    bottom: 6,
+    right: 8,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 3,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
   },
-  spotNumberText: {
-    fontSize: 17,
-    fontWeight: "600",
-    letterSpacing: -0.2,
-  },
-  spotAvailableText: {
-    fontSize: 10,
-    fontWeight: "400",
-    marginTop: 1,
-  },
-  spotOccupiedBox: {
-    height: 58,
-    borderRadius: 16,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  chargingBadgeText: {
+    fontSize: 8.5,
+    fontWeight: "700",
+    color: "#10B981",
   },
 
   /* Bottom Sticky Continue Bar */

@@ -1978,9 +1978,9 @@ export default function Home() {
                           <View key={sp.id} style={[styles.occupiedBayWrapper, spaceTopo === "wide" && { borderWidth: 1.5, borderColor: theme.borderStrong }]}>
                             <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{sp.space_number}</Text>
                             {spaceTopo === "parallel" ? (
-                              <HorizontalUltraRealisticCar color={carHex} width={58} height={28} />
+                              <HorizontalUltraRealisticCar color={carHex} width={68} height={34} />
                             ) : (
-                              <VerticalUltraRealisticCar color={carHex} width={28} height={50} />
+                              <VerticalUltraRealisticCar color={carHex} width={30} height={54} />
                             )}
                           </View>
                         );
@@ -2051,9 +2051,9 @@ export default function Home() {
                           <View key={sp.id} style={[styles.occupiedBayWrapper, spaceTopo === "wide" && { borderWidth: 1.5, borderColor: theme.borderStrong }]}>
                             <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{sp.space_number}</Text>
                             {spaceTopo === "parallel" ? (
-                              <HorizontalUltraRealisticCar color={carHex} width={58} height={28} />
+                              <HorizontalUltraRealisticCar color={carHex} width={68} height={34} />
                             ) : (
-                              <VerticalUltraRealisticCar color={carHex} width={28} height={50} />
+                              <VerticalUltraRealisticCar color={carHex} width={30} height={54} />
                             )}
                           </View>
                         );
@@ -4268,8 +4268,9 @@ export default function Home() {
                       .replace(/\b\d+\s*k\s*w\b/gi, "")
                       .replace(/\b(ac|dc)\b/gi, "")
                       .replace(/Covered\s*/gi, "Covered")
+                      .replace(/\bBay\b/gi, "")
                       .trim();
-                    return sanitized || "Standard Bay";
+                    return sanitized || "Standard";
                   };
 
                   return (
@@ -4297,19 +4298,22 @@ export default function Home() {
                                     setInspectedSheetSpace(matchedSp);
                                   } else {
                                     Alert.alert(
-                                      `Bay ${spot.bayNumber} Occupied`,
-                                      "This parking bay is currently occupied by a parked vehicle."
+                                      `Space ${spot.bayNumber} Occupied`,
+                                      "This parking space is currently occupied by a parked vehicle."
                                     );
                                   }
                                 }}
-                                style={styles.occupiedBayGraphicCard}
+                                style={[
+                                  styles.occupiedBayGraphicCard,
+                                  { backgroundColor: theme.surface, borderColor: theme.border },
+                                ]}
                               >
                                 <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{spot.bayNumber}</Text>
-                                <HorizontalUltraRealisticCar color={spot.carColor} width={58} height={28} />
+                                <HorizontalUltraRealisticCar color={spot.carColor} width={68} height={34} />
                                 {(spot.spaceType === "ev" || isEvLot) && (
-                                  <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                                  <View style={styles.chargingBadge}>
                                     <Ionicons name="flash" size={8} color="#10B981" />
-                                    <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>
+                                    <Text style={styles.chargingBadgeText}>CHARGING</Text>
                                   </View>
                                 )}
                               </TouchableOpacity>
@@ -4326,7 +4330,7 @@ export default function Home() {
                               style={[
                                 styles.bayAvailableCard,
                                 {
-                                  backgroundColor: isSelected ? theme.surfaceMuted : "transparent",
+                                  backgroundColor: isSelected ? theme.surfaceMuted : theme.surface,
                                   borderColor: isSelected
                                     ? (isEvSpot ? theme.evGreen : theme.text)
                                     : theme.border,
@@ -4342,17 +4346,25 @@ export default function Home() {
                               }}
                               activeOpacity={0.8}
                             >
-                              <Text style={[styles.bayNumberBold, { color: theme.text }]}>
-                                {spot.bayNumber}
-                              </Text>
+                              <View style={styles.sheetBayCardHeader}>
+                                <Text style={[styles.bayNumberBold, { color: theme.text }]}>
+                                  {spot.bayNumber}
+                                </Text>
+                                {isSelected ? (
+                                  <View style={[styles.selectedCheckDot, { backgroundColor: isEvSpot ? theme.evGreen : theme.text }]}>
+                                    <Ionicons name="checkmark" size={10} color={isEvSpot ? theme.evGreenText : theme.background} />
+                                  </View>
+                                ) : isEvSpot ? (
+                                  <Ionicons name="flash" size={12} color={theme.evGreen} />
+                                ) : isHcSpot ? (
+                                  <Ionicons name="body" size={12} color={theme.textSecondary} />
+                                ) : (
+                                  <View style={[styles.vacantDotMini, { backgroundColor: theme.borderStrong }]} />
+                                )}
+                              </View>
                               <Text style={[styles.bayStatusSub, { color: isEvSpot && !isSpotDisabled ? theme.evGreen : isSelected ? theme.text : theme.textSecondary }]}>
                                 {formatSpotLabel(spot.spotType)}
                               </Text>
-                              {isSelected && (
-                                <View style={[styles.selectedCheckDot, { backgroundColor: isEvSpot ? theme.evGreen : theme.text, top: 4, right: 4 }]}>
-                                  <Ionicons name="checkmark" size={10} color={isEvSpot ? theme.evGreenText : theme.background} />
-                                </View>
-                              )}
                             </TouchableOpacity>
                           );
                         })}
@@ -4381,19 +4393,22 @@ export default function Home() {
                                     setInspectedSheetSpace(matchedSp);
                                   } else {
                                     Alert.alert(
-                                      `Bay ${spot.bayNumber} Occupied`,
-                                      "This parking bay is currently occupied by a parked vehicle."
+                                      `Space ${spot.bayNumber} Occupied`,
+                                      "This parking space is currently occupied by a parked vehicle."
                                     );
                                   }
                                 }}
-                                style={styles.occupiedBayGraphicCard}
+                                style={[
+                                  styles.occupiedBayGraphicCard,
+                                  { backgroundColor: theme.surface, borderColor: theme.border },
+                                ]}
                               >
                                 <Text style={[styles.bayLabelMuted, { color: theme.textSecondary }]}>{spot.bayNumber}</Text>
-                                <HorizontalUltraRealisticCar color={spot.carColor} width={58} height={28} />
+                                <HorizontalUltraRealisticCar color={spot.carColor} width={68} height={34} />
                                 {(spot.spaceType === "ev" || isEvLot) && (
-                                  <View style={{ position: "absolute", bottom: 2, right: 6, flexDirection: "row", alignItems: "center", gap: 2, backgroundColor: "rgba(0,0,0,0.6)", paddingHorizontal: 5, paddingVertical: 1, borderRadius: 6 }}>
+                                  <View style={styles.chargingBadge}>
                                     <Ionicons name="flash" size={8} color="#10B981" />
-                                    <Text style={{ fontSize: 8, fontWeight: "700", color: "#10B981" }}>CHARGING</Text>
+                                    <Text style={styles.chargingBadgeText}>CHARGING</Text>
                                   </View>
                                 )}
                               </TouchableOpacity>
@@ -4410,7 +4425,7 @@ export default function Home() {
                               style={[
                                 styles.bayAvailableCard,
                                 {
-                                  backgroundColor: isSelected ? theme.surfaceMuted : "transparent",
+                                  backgroundColor: isSelected ? theme.surfaceMuted : theme.surface,
                                   borderColor: isSelected
                                     ? (isEvSpot ? theme.evGreen : theme.text)
                                     : theme.border,
@@ -4426,17 +4441,25 @@ export default function Home() {
                               }}
                               activeOpacity={0.8}
                             >
-                              <Text style={[styles.bayNumberBold, { color: theme.text }]}>
-                                {spot.bayNumber}
-                              </Text>
+                              <View style={styles.sheetBayCardHeader}>
+                                <Text style={[styles.bayNumberBold, { color: theme.text }]}>
+                                  {spot.bayNumber}
+                                </Text>
+                                {isSelected ? (
+                                  <View style={[styles.selectedCheckDot, { backgroundColor: isEvSpot ? theme.evGreen : theme.text }]}>
+                                    <Ionicons name="checkmark" size={10} color={isEvSpot ? theme.evGreenText : theme.background} />
+                                  </View>
+                                ) : isEvSpot ? (
+                                  <Ionicons name="flash" size={12} color={theme.evGreen} />
+                                ) : isHcSpot ? (
+                                  <Ionicons name="body" size={12} color={theme.textSecondary} />
+                                ) : (
+                                  <View style={[styles.vacantDotMini, { backgroundColor: theme.borderStrong }]} />
+                                )}
+                              </View>
                               <Text style={[styles.bayStatusSub, { color: isEvSpot && !isSpotDisabled ? theme.evGreen : isSelected ? theme.text : theme.textSecondary }]}>
                                 {formatSpotLabel(spot.spotType)}
                               </Text>
-                              {isSelected && (
-                                <View style={[styles.selectedCheckDot, { backgroundColor: isEvSpot ? theme.evGreen : theme.text, top: 4, right: 4 }]}>
-                                  <Ionicons name="checkmark" size={10} color={isEvSpot ? theme.evGreenText : theme.background} />
-                                </View>
-                              )}
                             </TouchableOpacity>
                           );
                         })}
@@ -5088,7 +5111,7 @@ export default function Home() {
                   <View style={styles.scannedDetailsRow}>
                     <Text style={[styles.scannedRateText, isEvSpot && isVehicleElectric && { color: theme.evGreen }]}>
                       {isEvSpot && isVehicleElectric
-                        ? "EV Charge: 9k (<30m) / 10k RWF (≥30m) • 0 Park"
+                        ? "EV Charge: 250 RWF / kWh"
                         : `${scannedSpaceInfo.hourlyRate} RWF / hour (Parking)`}
                     </Text>
                     <Text style={styles.scannedTokenText}>Code: {scannedSpaceInfo.token}</Text>
@@ -5732,7 +5755,7 @@ export default function Home() {
                     />
                     <Text style={[styles.statBadgeText, { color: theme.text }]}>
                       {selectedMapLocation.is_electric_station && isVehicleElectric
-                        ? "EV Charge: 9k / 10k RWF"
+                        ? "EV Charge: 250 RWF / kWh"
                         : `${selectedMapLocation.hourly_rate || 300} RWF /hr`}
                     </Text>
                   </View>
@@ -6159,7 +6182,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   occupiedBayWrapper: {
-    height: 80,
+    height: 84,
     borderRadius: 14,
     backgroundColor: "transparent",
     alignItems: "center",
@@ -6168,14 +6191,14 @@ const styles = StyleSheet.create({
   },
   bayLabelMuted: {
     position: "absolute",
-    top: 6,
-    left: 8,
-    fontSize: 10,
-    fontWeight: "500",
+    top: 8,
+    left: 10,
+    fontSize: 11,
+    fontWeight: "700",
     zIndex: 2,
   },
   freeBaySlot: {
-    height: 80,
+    height: 84,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -7552,28 +7575,57 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   bayAvailableCard: {
-    height: 68,
+    height: 84,
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    justifyContent: "space-between",
+  },
+  sheetBayCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+  },
+  vacantDotMini: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  bayNumberBold: {
+    fontSize: 16,
+    fontWeight: "700",
+    letterSpacing: -0.2,
+  },
+  bayStatusSub: {
+    fontSize: 10.5,
+    fontWeight: "500",
+  },
+  occupiedBayGraphicCard: {
+    height: 84,
     borderRadius: 14,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 6,
-    paddingHorizontal: 8,
+    position: "relative",
   },
-  bayNumberBold: {
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  bayStatusSub: {
-    fontSize: 10,
-    fontWeight: "400",
-    marginTop: 2,
-  },
-  occupiedBayGraphicCard: {
-    height: 68,
-    borderRadius: 14,
+  chargingBadge: {
+    position: "absolute",
+    bottom: 6,
+    right: 8,
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 3,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  chargingBadgeText: {
+    fontSize: 8.5,
+    fontWeight: "700",
+    color: "#10B981",
   },
   sheetContinueBtn: {
     backgroundColor: "#18181B",

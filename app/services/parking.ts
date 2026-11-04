@@ -1514,7 +1514,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             distance: "",
             latitude: -1.942,
             longitude: 30.113,
-            tariff: "9k–10k RWF",
+            tariff: "250 RWF/kWh",
             image: resolveSpaceImageUrl("Nyarutarama EV Charging Hub", "ev"),
             image_url: resolveSpaceImageUrl("Nyarutarama EV Charging Hub", "ev"),
             chargers: [
