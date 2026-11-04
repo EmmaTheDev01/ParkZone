@@ -25,6 +25,14 @@ const getManager = (): BleManager | null => {
   return manager;
 };
 
+const requireManager = (): BleManager => {
+  const ble = getManager();
+  if (!ble) {
+    throw new Error("Bluetooth hardware is not accessible");
+  }
+  return ble;
+};
+
 export const requestBluetoothPermissions = async (): Promise<boolean> => {
   try {
     if (Platform.OS !== "android") return true;
@@ -136,6 +144,58 @@ export const disconnectDevice = async (deviceId: string): Promise<void> => {
   try {
     await ble.cancelDeviceConnection(deviceId);
   } catch (_) {}
+};
+
+export interface SerialChannel {
+    service: string;
+    writeCharacteristic: string;
+    notifyCharacteristic: string;
+}
+
+
+export const findSerialChannel = async (deviceId: string): Promise<SerialChannel> => {
+    const ble = requireManager();
+    for (const service of await ble.servicesForDevice(deviceId)) {
+        let write: string | null = null;
+        let notify: string | null = null;
+        for (const c of await ble.characteristicsForDevice(deviceId, service.uuid)) {
+            if (!write && (c.isWritableWithResponse || c.isWritableWithoutResponse)) write = c.uuid;
+            if (!notify && (c.isNotifiable || c.isIndicatable)) notify = c.uuid;
+        }
+        if (write && notify) return { service: service.uuid, writeCharacteristic: write, notifyCharacteristic: notify };
+    }
+    throw new Error('No serial characteristics found on this device');
+};
+
+export const writeText = async (deviceId: string, channel: SerialChannel, text: string): Promise<void> => {
+    await requireManager().writeCharacteristicWithoutResponseForDevice(
+        deviceId,
+        channel.service,
+        channel.writeCharacteristic,
+        btoa(text),
+    );
+};
+
+
+export const monitorText = (
+    deviceId: string,
+    channel: SerialChannel,
+    onText: (chunk: string) => void,
+    onError?: (error: Error) => void,
+): (() => void) => {
+    const subscription = requireManager().monitorCharacteristicForDevice(
+        deviceId,
+        channel.service,
+        channel.notifyCharacteristic,
+        (error, characteristic) => {
+            if (error) {
+                onError?.(error);
+                return;
+            }
+            if (characteristic?.value) onText(atob(characteristic.value));
+        },
+    );
+    return () => subscription.remove();
 };
 
 export const destroyBluetooth = (): void => {
