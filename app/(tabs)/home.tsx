@@ -405,14 +405,10 @@ export default function Home() {
   // Details View in-lot search query
   const [detailsSearchQuery, setDetailsSearchQuery] = useState("");
 
-  // Strict Vehicle Eligibility Filter
+  // Vehicle Eligibility: Keep all valid active database locations accessible
   const eligibleLocations: ParkingLocation[] = React.useMemo(() => {
-    return locations.filter((loc) => {
-      if (loc.is_electric_station && !isVehicleElectric) return false;
-      if (loc.is_handicap_facility && !isVehicleHandicap) return false;
-      return true;
-    });
-  }, [locations, isVehicleElectric, isVehicleHandicap]);
+    return locations;
+  }, [locations]);
 
   // Zone filter, interactive spot selection bottom sheet & confirm modal
   const [activeZoneFilter, setActiveZoneFilter] = useState("All zones");
@@ -1796,11 +1792,6 @@ export default function Home() {
 
   const visibleSpaces: ParkingSpace[] = useMemo(() => {
     return spaces.filter((sp: ParkingSpace) => {
-      // Non-electric vehicles never see EV bays
-      if (sp.space_type === "ev" && !isVehicleElectric) return false;
-      // Non-handicap vehicles never see handicap bays
-      if (sp.space_type === "handicap" && !isVehicleHandicap) return false;
-
       // In-lot search filter
       if (detailsSearchQuery.trim().length > 0) {
         const q = detailsSearchQuery.toLowerCase().trim();
@@ -1811,7 +1802,7 @@ export default function Home() {
 
       return true;
     });
-  }, [spaces, isVehicleElectric, isVehicleHandicap, detailsSearchQuery]);
+  }, [spaces, detailsSearchQuery]);
 
   const leftColumnSpaces: ParkingSpace[] = visibleSpaces.filter((_: ParkingSpace, idx: number) => idx % 2 === 0);
   const rightColumnSpaces: ParkingSpace[] = visibleSpaces.filter((_: ParkingSpace, idx: number) => idx % 2 === 1);
@@ -5353,8 +5344,8 @@ export default function Home() {
                       );
                     })}
 
-                {/* Rate Bubble Markers for EV Stations: Shown strictly for EV vehicles in 'ev' or 'all' mode */}
-                {isVehicleElectric && (mapCategory === "all" || mapCategory === "ev") &&
+                {/* Rate Bubble Markers for EV Stations: Shown in 'ev' mode or for electric vehicles */}
+                {(mapCategory === "ev" || (isVehicleElectric && mapCategory === "all")) &&
                   evStations
                     .filter((ev) => {
                       if (!mapSearch) return true;

@@ -704,7 +704,6 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
     const { data, error } = await supabase
         .from("parking_locations")
         .select("*")
-        .eq("is_active", true)
         .order("name", { ascending: true });
 
     if (error) {
@@ -723,7 +722,9 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
         spacesByLoc.set(s.location_id, arr);
     });
 
-    return ((data as any[]) || []).map((loc) => {
+    return ((data as any[]) || [])
+        .filter((loc) => loc.is_active !== false && loc.status !== "inactive")
+        .map((loc) => {
         const locSpaces = spacesByLoc.get(loc.id) || [];
         const isElectric = Boolean(
             loc.is_electric_station ||
@@ -741,7 +742,7 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             locSpaces.some((s: any) => s.space_type === "handicap")
         );
 
-        const totalSpots = Number(loc.total_spots) || locSpaces.length || 10;
+        const totalSpots = Number(loc.total_spots) || (locSpaces.length > 0 ? locSpaces.length : 12);
         const availableSpots =
             loc.available_spots !== undefined && loc.available_spots !== null
                 ? Number(loc.available_spots)
@@ -751,12 +752,12 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
 
         const hourlyRate =
             Number(loc.hourly_rate) ||
-            Number(locSpaces[0]?.hourly_rate) ||
+            Number(locSpaces.find((s: any) => s.hourly_rate)?.hourly_rate) ||
             (isElectric ? 1500 : 300);
 
         const dailyRate =
             Number(loc.daily_rate) ||
-            Number(locSpaces[0]?.daily_rate) ||
+            Number(locSpaces.find((s: any) => s.daily_rate)?.daily_rate) ||
             (isElectric ? 10000 : 2000);
 
         const zoneCode =
@@ -906,9 +907,11 @@ export async function fetchSpotsForLocation(
             ? s.zone_code
             : locRow?.zone_code && STANDARD_PARKING_ZONES.includes(locRow.zone_code as any)
             ? locRow.zone_code
-            : isEvStation
+            : isEvStation || s.space_type === "ev"
             ? "Zone A"
-            : "Zone C";
+            : s.space_type === "handicap"
+            ? "Zone E"
+            : "Zone A";
 
         const isEv = s.space_type === "ev" || isEvStation || normalizedZone === "Zone A";
         const matchingCharger =
@@ -970,6 +973,17 @@ export async function fetchSpotsForLocation(
             spot_label: spotLabel,
         };
     });
+
+    // If real database spaces exist in parking_spaces, return them directly!
+    if (normalizedDbSpaces.length > 0) {
+        if (zoneCode && zoneCode !== "All Zones") {
+            const inRequestedZone = normalizedDbSpaces.filter((s) => s.zone_code === zoneCode);
+            if (inRequestedZone.length > 0) {
+                return inRequestedZone;
+            }
+        }
+        return normalizedDbSpaces;
+    }
 
     // Calculate database occupancy ratio from parking_locations (total_spots vs available_spots)
     const totalLocSpots = Number(locRow?.total_spots) || 0;
@@ -1727,7 +1741,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             distance: "",
             latitude: Number(loc.latitude),
             longitude: Number(loc.longitude),
-            tariff: `${Math.round(quick / 1000)}k–${Math.round(full / 1000)}k RWF`,
+            tariff: "250 RWF/kWh",
             image: resolvedStationImg,
             image_url: resolvedStationImg,
             chargers,
