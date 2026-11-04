@@ -122,55 +122,15 @@ export const AerialParkingLot3D: React.FC<Props> = ({
     (targetSpace: ParkingSpace) => {
       if (targetSpace.is_occupied) return;
 
-      setAnimatingCar(true);
-
       VoiceGuidance.announceSlotSelected(targetSpace.space_number, locationName, {
         isOccupied: false,
         wattPower: targetSpace.watt_power_kw,
         price: targetSpace.price_per_hour_rwf || 0,
       });
 
-      carAisleProgress.setValue(0);
-      carTurnRotation.setValue(0);
-      carStallProgress.setValue(0);
-      carOpacity.setValue(1);
-
-      const isRight = spaces.findIndex((s) => s.id === targetSpace.id) % 2 === 1;
-      let targetRot = isRight ? 90 : -90;
-      const targetSpaceLayout = targetSpace.topology || activeTopology;
-      if (targetSpaceLayout === "oblique") {
-        targetRot = isRight ? 45 : -45;
-      } else if (targetSpaceLayout === "parallel") {
-        targetRot = 0;
-      }
-
-      Animated.sequence([
-        Animated.timing(carAisleProgress, {
-          toValue: 1,
-          duration: 1200,
-          easing: Easing.out(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(carTurnRotation, {
-          toValue: targetRot,
-          duration: 500,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(carStallProgress, {
-          toValue: 1,
-          duration: 700,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setTimeout(() => {
-          setAnimatingCar(false);
-          onSelectSpace(targetSpace);
-        }, 400);
-      });
+      onSelectSpace(targetSpace);
     },
-    [activeTopology, locationName, onSelectSpace, spaces]
+    [locationName, onSelectSpace]
   );
 
   const stallAngle = useMemo(() => {
@@ -204,11 +164,9 @@ export const AerialParkingLot3D: React.FC<Props> = ({
     const spaceLayout: TopologyType = space.topology || activeTopology || "perpendicular";
 
     let spaceAngle = 0;
-    let spaceTransform: any = undefined;
 
     if (spaceLayout === "oblique") {
-      spaceAngle = isRightBank ? 36 : -36;
-      spaceTransform = [{ skewX: isRightBank ? "12deg" : "-12deg" }];
+      spaceAngle = isRightBank ? 25 : -25;
     } else if (spaceLayout === "parallel") {
       spaceAngle = 0;
     } else if (spaceLayout === "wide") {
@@ -243,22 +201,21 @@ export const AerialParkingLot3D: React.FC<Props> = ({
         }}
         style={[
           styles.stallBox,
-          compact && { width: 90, height: 120, padding: 6 },
-          spaceLayout === "oblique" && (spaceTransform ? { transform: spaceTransform } : styles.stallOblique),
+          compact && { width: 104, height: 136, padding: 8 },
           spaceLayout === "parallel" && styles.stallParallel,
           spaceLayout === "wide" && styles.stallWide,
           {
             backgroundColor: isSelected
-              ? (isEvStall ? theme.evGreenSoft : theme.accentSoft)
+              ? (isEvStall ? theme.evGreenSoft : theme.surfaceMuted)
               : isVacant
                 ? theme.surface
-                : (isEvStall ? "rgba(16, 185, 129, 0.08)" : theme.dangerSoft),
+                : theme.background,
             borderColor: isSelected
-              ? (isEvStall ? theme.evGreen : theme.accent)
+              ? theme.text
               : isVacant
-                ? (isEvStall ? theme.evGreenBorder : theme.borderStrong)
-                : (isEvStall ? theme.evGreen : theme.danger),
-            borderWidth: isSelected ? 2.5 : 1.5,
+                ? theme.borderStrong
+                : theme.border,
+            borderWidth: isSelected ? 2 : 1,
           },
         ]}
       >
@@ -268,7 +225,8 @@ export const AerialParkingLot3D: React.FC<Props> = ({
             style={[
               styles.stallNumber,
               {
-                color: isVacant ? theme.text : isEvStall ? theme.evGreen : theme.danger,
+                color: isVacant ? theme.text : isEvStall ? theme.evGreen : theme.textSecondary,
+                fontWeight: "600",
               },
             ]}
           >
@@ -320,9 +278,8 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                   />
                 </View>
               )}
-              <View style={[styles.occupiedRibbon, { backgroundColor: isEvStall ? theme.evGreenSoft : theme.dangerSoft }]}>
-                <View style={[styles.redDotLive, { backgroundColor: isEvStall ? theme.evGreen : theme.danger }]} />
-                <Text style={[styles.occupiedRibbonText, { color: isEvStall ? theme.evGreen : theme.danger }]}>
+              <View style={[styles.occupiedRibbon, { backgroundColor: isEvStall ? theme.evGreenSoft : theme.surfaceMuted }]}>
+                <Text style={[styles.occupiedRibbonText, { color: isEvStall ? theme.evGreen : theme.textSecondary }]}>
                   {isEvStall ? "CHARGING" : "OCCUPIED"}
                 </Text>
               </View>
@@ -333,17 +290,17 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 style={[
                   styles.vacantReticle,
                   {
-                    borderColor: isSelected
-                      ? (isEvStall ? theme.evGreen : theme.accent)
-                      : isEvStall
-                        ? theme.evGreenBorder
-                        : theme.textSecondary,
+                    borderColor: isSelected ? theme.text : theme.borderStrong,
+                    width: 22,
+                    height: 22,
+                    borderRadius: 11,
+                    marginBottom: 3,
                   },
                 ]}
               >
-                <View style={[styles.pulseDot, { backgroundColor: isEvStall ? theme.evGreen : theme.accent }]} />
+                <View style={[styles.pulseDot, { backgroundColor: isEvStall ? theme.evGreen : theme.textSecondary, width: 5, height: 5, borderRadius: 2.5 }]} />
               </View>
-              <Text style={[styles.vacantLabel, { color: isEvStall ? theme.evGreen : theme.text }]}>
+              <Text style={[styles.vacantLabel, { color: isEvStall ? theme.evGreen : theme.text, fontSize: 9, fontWeight: "600" }]}>
                 {isEvStall ? "READY" : "AVAILABLE"}
               </Text>
 
@@ -352,12 +309,13 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                   style={[
                     styles.wattBadge,
                     {
-                      backgroundColor: theme.evGreenSoft,
-                      borderColor: theme.evGreenBorder,
+                      backgroundColor: theme.surfaceMuted,
+                      borderColor: theme.border,
+                      marginTop: 2,
                     },
                   ]}
                 >
-                  <Text style={[styles.wattBadgeText, { color: theme.evGreen }]}>
+                  <Text style={[styles.wattBadgeText, { color: theme.textSecondary, fontSize: 8 }]}>
                     {space.watt_power_kw} kW
                   </Text>
                 </View>
@@ -374,7 +332,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
             </Text>
           ) : (
             <View style={styles.priceRow}>
-              <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary }]}>
+              <Text style={[styles.priceTag, { color: isEvStall ? theme.evGreen : theme.textSecondary, fontSize: 9, fontWeight: "500" }]}>
                 {isEvStall
                   ? "9k–10k RWF"
                   : space.price_per_hour_rwf
@@ -489,8 +447,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                       : theme.isDark
                         ? "#27272A"
                         : "#F4F4F5",
-                  borderColor:
-                    lotKind === "charging" ? theme.evGreenBorder : theme.border,
+                  borderColor: theme.border,
                 },
               ]}
             >
@@ -572,28 +529,6 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 <Ionicons name="arrow-forward" size={12} color={theme.textSecondary} />
               </View>
               <View style={[styles.aisleDashedLine, { backgroundColor: theme.borderStrong }]} />
-
-              {animatingCar && (
-                <Animated.View
-                  style={[
-                    styles.animatingCarGhost,
-                    {
-                      opacity: carOpacity,
-                      transform: [
-                        { translateX: animatedCarTranslateX },
-                        { translateY: animatedCarTranslateY },
-                        { rotate: animatedCarRotation },
-                      ],
-                    },
-                  ]}
-                >
-                  <VerticalUltraRealisticCar
-                    color="emerald"
-                    width={44}
-                    height={84}
-                  />
-                </Animated.View>
-              )}
             </View>
 
             <View style={styles.bankRow}>
@@ -682,7 +617,7 @@ export const AerialParkingLot3D: React.FC<Props> = ({
                 <View
                   style={[
                     styles.hickSpecPill,
-                    { backgroundColor: theme.evGreenSoft, borderColor: theme.evGreenBorder },
+                    { backgroundColor: theme.surfaceMuted, borderColor: theme.border },
                   ]}
                 >
                   <Text style={[styles.hickSpecLabel, { color: theme.textSecondary }]}>

@@ -788,7 +788,7 @@ const Activities = () => {
           styles.historyCard,
           {
             backgroundColor: theme.surface,
-            borderColor: isEvSession ? theme.evGreenBorder : theme.border,
+            borderColor: theme.border,
             shadowColor: theme.cardShadow,
           },
         ]}
@@ -832,13 +832,11 @@ const Activities = () => {
               style={[
                 styles.historyStatusPill,
                 {
-                  backgroundColor: isEvSession
-                    ? theme.evGreenSoft
-                    : isCompleted
-                      ? theme.pillInactiveBg
-                      : theme.pillActiveBg,
-                  borderWidth: isEvSession ? 1 : 0,
-                  borderColor: isEvSession ? theme.evGreenBorder : "transparent",
+                  backgroundColor: isCompleted
+                    ? theme.pillInactiveBg
+                    : theme.pillActiveBg,
+                  borderWidth: 1,
+                  borderColor: theme.border,
                 },
               ]}
             >

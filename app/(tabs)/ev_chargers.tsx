@@ -487,7 +487,7 @@ const EVChargers = () => {
                 <View
                   style={{
                     backgroundColor: theme.isDark ? "#18181B" : "#09090B",
-                    borderColor: theme.evGreenBorder,
+                    borderColor: theme.border,
                     borderWidth: 1,
                     paddingHorizontal: 8,
                     paddingVertical: 3,
@@ -573,9 +573,9 @@ const EVChargers = () => {
                       styles.evPinBadge,
                       {
                         backgroundColor: isSelected
-                          ? theme.evGreen
-                          : "#09090B",
-                        borderColor: isSelected ? "#FFFFFF" : theme.evGreenBorder,
+                          ? (theme.isDark ? "#FFFFFF" : "#09090B")
+                          : (theme.isDark ? "#18181B" : "#F4F4F5"),
+                        borderColor: isSelected ? theme.border : theme.borderStrong,
                       },
                     ]}
                   >
@@ -732,9 +732,9 @@ const EVChargers = () => {
                     style={[
                       styles.nearbyThumbImg,
                       {
-                        backgroundColor: theme.evGreenSoft,
+                        backgroundColor: theme.surfaceMuted,
                         borderWidth: 1,
-                        borderColor: theme.evGreenBorder,
+                        borderColor: theme.border,
                         alignItems: "center",
                         justifyContent: "center",
                       },
@@ -871,7 +871,7 @@ const EVChargers = () => {
                   <Text style={[styles.sheetStationTitle, { color: theme.text }]} numberOfLines={1}>
                     {sheetStation?.name || "EV Charging Station"}
                   </Text>
-                  <View style={[styles.liveFeedBadge, { backgroundColor: theme.evGreenSoft, borderColor: theme.evGreenBorder }]}>
+                  <View style={[styles.liveFeedBadge, { backgroundColor: theme.surfaceMuted, borderColor: theme.border }]}>
                     <View style={[styles.liveDot, { backgroundColor: theme.evGreen }]} />
                     <Text style={[styles.liveFeedText, { color: theme.evGreen }]}>LIVE OCPP</Text>
                   </View>
@@ -1076,8 +1076,8 @@ const EVChargers = () => {
                           styles.spotAvailableCard,
                           {
                             backgroundColor: theme.background,
-                            borderColor: isSelected ? theme.evGreen : theme.evGreenBorder,
-                            borderWidth: isSelected ? 2.5 : 1,
+                            borderColor: isSelected ? theme.text : theme.border,
+                            borderWidth: isSelected ? 2 : 1,
                           },
                         ]}
                         onPress={() => {
@@ -1152,8 +1152,8 @@ const EVChargers = () => {
                           styles.spotAvailableCard,
                           {
                             backgroundColor: theme.background,
-                            borderColor: isSelected ? theme.evGreen : theme.evGreenBorder,
-                            borderWidth: isSelected ? 2.5 : 1,
+                            borderColor: isSelected ? theme.text : theme.border,
+                            borderWidth: isSelected ? 2 : 1,
                           },
                         ]}
                         onPress={() => {
