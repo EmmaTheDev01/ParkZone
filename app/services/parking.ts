@@ -725,6 +725,154 @@ export function parseLocationMeta(loc: any): {
     };
 }
 
+export const DB_REGISTERED_PARKING_SPACES: Record<string, ParkingSpace[]> = {
+    // Kigali Heights Parking (Standard Parking)
+    "11111111-1111-1111-1111-111111111111": [
+        {
+            id: "a0000000-0000-0000-0000-000000000001",
+            location_id: "11111111-1111-1111-1111-111111111111",
+            space_number: "R-01",
+            zone_code: "Zone A",
+            space_type: "regular",
+            price_per_hour_rwf: 500,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-1111-R01",
+            spot_label: "Available",
+            topology: "oblique",
+        },
+        {
+            id: "a0000000-0000-0000-0000-000000000002",
+            location_id: "11111111-1111-1111-1111-111111111111",
+            space_number: "R-02",
+            zone_code: "Zone A",
+            space_type: "regular",
+            price_per_hour_rwf: 500,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-1111-R02",
+            spot_label: "Available",
+            topology: "oblique",
+        },
+        {
+            id: "a0000000-0000-0000-0000-000000000003",
+            location_id: "11111111-1111-1111-1111-111111111111",
+            space_number: "R-03",
+            zone_code: "Zone A",
+            space_type: "regular",
+            price_per_hour_rwf: 500,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-1111-R03",
+            spot_label: "Available",
+            topology: "oblique",
+        },
+        {
+            id: "a0000000-0000-0000-0000-000000000004",
+            location_id: "11111111-1111-1111-1111-111111111111",
+            space_number: "M-01",
+            zone_code: "Zone A",
+            space_type: "regular",
+            price_per_hour_rwf: 200,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-1111-M01",
+            spot_label: "Available",
+            topology: "oblique",
+        },
+    ],
+    // Kigali Convention Centre Accessible Parking (Accessible Facility)
+    "22222222-2222-2222-2222-222222222222": [
+        {
+            id: "b0000000-0000-0000-0000-000000000001",
+            location_id: "22222222-2222-2222-2222-222222222222",
+            space_number: "H-01",
+            zone_code: "Zone A",
+            space_type: "handicap",
+            price_per_hour_rwf: 300,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-2222-H01",
+            spot_label: "Accessible",
+            topology: "wide",
+        },
+        {
+            id: "b0000000-0000-0000-0000-000000000002",
+            location_id: "22222222-2222-2222-2222-222222222222",
+            space_number: "H-02",
+            zone_code: "Zone A",
+            space_type: "handicap",
+            price_per_hour_rwf: 300,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-2222-H02",
+            spot_label: "Accessible",
+            topology: "wide",
+        },
+        {
+            id: "b0000000-0000-0000-0000-000000000003",
+            location_id: "22222222-2222-2222-2222-222222222222",
+            space_number: "H-03",
+            zone_code: "Zone A",
+            space_type: "handicap",
+            price_per_hour_rwf: 300,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-2222-H03",
+            spot_label: "Accessible",
+            topology: "wide",
+        },
+    ],
+    // Nyarutarama EV Charging Hub (EV Hypercharger Station)
+    "33333333-3333-3333-3333-333333333333": [
+        {
+            id: "c0000000-0000-0000-0000-000000000001",
+            location_id: "33333333-3333-3333-3333-333333333333",
+            space_number: "EV-01",
+            zone_code: "Zone A",
+            space_type: "ev",
+            price_per_hour_rwf: 1500,
+            watt_power_kw: 120,
+            price_per_kwh_rwf: 250,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-3333-EV01",
+            spot_label: "120kW DC",
+            topology: "perpendicular",
+        },
+        {
+            id: "c0000000-0000-0000-0000-000000000002",
+            location_id: "33333333-3333-3333-3333-333333333333",
+            space_number: "EV-02",
+            zone_code: "Zone A",
+            space_type: "ev",
+            price_per_hour_rwf: 1500,
+            watt_power_kw: 60,
+            price_per_kwh_rwf: 250,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-3333-EV02",
+            spot_label: "60kW DC",
+            topology: "perpendicular",
+        },
+        {
+            id: "c0000000-0000-0000-0000-000000000003",
+            location_id: "33333333-3333-3333-3333-333333333333",
+            space_number: "EV-03",
+            zone_code: "Zone A",
+            space_type: "ev",
+            price_per_hour_rwf: 1500,
+            watt_power_kw: 22,
+            price_per_kwh_rwf: 250,
+            is_occupied: false,
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
+            qr_code_token: "PZ-SPACE-3333-EV03",
+            spot_label: "22kW AC",
+            topology: "perpendicular",
+        },
+    ],
+};
+
 export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
     const { data, error } = await supabase
         .from("parking_locations")
@@ -746,6 +894,12 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
         arr.push(s);
         spacesByLoc.set(s.location_id, arr);
     });
+
+    if (spacesByLoc.size === 0) {
+        Object.entries(DB_REGISTERED_PARKING_SPACES).forEach(([locId, spaces]) => {
+            spacesByLoc.set(locId, spaces);
+        });
+    }
 
     return ((data as any[]) || [])
         .filter((loc) => loc.is_active !== false && loc.status !== "inactive")
@@ -863,6 +1017,8 @@ export async function fetchSpotsForLocation(
             .order("space_number", { ascending: true });
         if (retryRes.data && retryRes.data.length > 0) {
             rawSpaces = retryRes.data as any;
+        } else if (DB_REGISTERED_PARKING_SPACES[locationId]) {
+            rawSpaces = DB_REGISTERED_PARKING_SPACES[locationId];
         }
     }
 
@@ -1382,8 +1538,8 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             latitude: -1.942,
             longitude: 30.113,
             tariff: "250 RWF/kWh",
-            image: undefined,
-            image_url: undefined,
+            image: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
+            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
             chargers: [
                 {
                     id: "c0000000-0000-0000-0000-000000000001",
@@ -1498,6 +1654,12 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
         arr.push(s);
         spacesByLoc.set(s.location_id, arr);
     });
+
+    if (spacesByLoc.size === 0) {
+        Object.entries(DB_REGISTERED_PARKING_SPACES).forEach(([locId, spaces]) => {
+            spacesByLoc.set(locId, spaces);
+        });
+    }
 
     const stations: DbEvStationItem[] = [];
     for (const loc of locs) {

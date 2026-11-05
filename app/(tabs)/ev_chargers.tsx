@@ -121,6 +121,43 @@ export interface ParkingLotSpot {
 
 type LayoutMode = "grid" | "map" | "list";
 
+const StationCardThumbnail = ({
+  imageUrl,
+  theme,
+}: {
+  imageUrl?: string;
+  theme: any;
+}) => {
+  const [hasError, setHasError] = useState(false);
+  const showImage = Boolean(imageUrl && imageUrl.trim().length > 0 && !hasError);
+
+  return (
+    <View
+      style={[
+        styles.nearbyThumbImg,
+        {
+          backgroundColor: theme.isDark ? "#27272A" : "#F4F4F5",
+          borderWidth: 1,
+          borderColor: theme.border,
+          overflow: "hidden",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      ]}
+    >
+      <MaterialCommunityIcons name="ev-station" size={30} color={theme.evGreen} />
+      {showImage && (
+        <Image
+          source={{ uri: imageUrl }}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+          onError={() => setHasError(true)}
+        />
+      )}
+    </View>
+  );
+};
+
 const EVChargers = () => {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -732,28 +769,7 @@ const EVChargers = () => {
                 activeOpacity={0.88}
               >
                 {/* Station Thumbnail Image with robust fallback */}
-                <View
-                  style={[
-                    styles.nearbyThumbImg,
-                    {
-                      backgroundColor: theme.surfaceMuted,
-                      borderWidth: 1,
-                      borderColor: theme.border,
-                      overflow: "hidden",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    },
-                  ]}
-                >
-                  <MaterialCommunityIcons name="ev-station" size={32} color={theme.evGreen} />
-                  {Boolean(item.image) && (
-                    <Image
-                      source={{ uri: item.image }}
-                      style={StyleSheet.absoluteFillObject}
-                      resizeMode="cover"
-                    />
-                  )}
-                </View>
+                <StationCardThumbnail imageUrl={item.image} theme={theme} />
 
                 {/* Right Info Column */}
                 <View style={styles.nearbyInfoCol}>
@@ -840,7 +856,7 @@ const EVChargers = () => {
                     </Text>
                     <Ionicons
                       name="git-branch-outline"
-                      size={14}
+                      size={13}
                       color={theme.isDark ? "#09090B" : "#FFFFFF"}
                     />
                   </TouchableOpacity>
@@ -2713,9 +2729,9 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   nearbyThumbImg: {
-    width: 72,
-    height: 72,
-    borderRadius: 14,
+    width: 76,
+    height: 76,
+    borderRadius: 16,
   },
   nearbyInfoCol: {
     flex: 1,
@@ -2723,16 +2739,17 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   nearbyTitleText: {
-    fontSize: 15,
+    fontSize: 14.5,
     fontWeight: "700",
-    letterSpacing: -0.2,
-    marginBottom: 4,
+    letterSpacing: -0.3,
+    marginBottom: 3,
   },
   nearbyMetricsRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     gap: 6,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   metricItemCol: {
     flex: 1,
@@ -2740,7 +2757,7 @@ const styles = StyleSheet.create({
   },
   metricLabelText: {
     fontSize: 10,
-    fontWeight: "400",
+    fontWeight: "500",
     marginBottom: 2,
   },
   metricValText: {
@@ -2752,9 +2769,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    borderRadius: 18,
-    paddingVertical: 7,
+    borderRadius: 16,
+    paddingVertical: 6,
     paddingHorizontal: 12,
+    height: 32,
   },
   mapDirectionBtnText: {
     fontSize: 11,
