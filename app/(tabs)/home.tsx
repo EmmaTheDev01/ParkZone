@@ -5663,35 +5663,37 @@ export default function Home() {
             </View>
 
             {/* Floating "See All Areas" City Overview Button on Map */}
-            <TouchableOpacity
-              style={{
-                position: "absolute",
-                right: 16,
-                bottom: selectedMapLocation ? 250 : insets.bottom + 20,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: theme.surface,
-                borderColor: theme.border,
-                borderWidth: 1,
-                paddingHorizontal: 14,
-                paddingVertical: 9,
-                borderRadius: 20,
-                shadowColor: theme.cardShadow,
-                shadowOffset: { width: 0, height: 3 },
-                shadowOpacity: 0.25,
-                shadowRadius: 5,
-                elevation: 5,
-                zIndex: 10,
-              }}
-              onPress={handleViewAllAreas}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="scan-outline" size={15} color={theme.text} />
-              <Text style={{ fontSize: 11, fontWeight: "700", color: theme.text }}>
-                See All Areas
-              </Text>
-            </TouchableOpacity>
+            {!selectedMapLocation && (
+              <TouchableOpacity
+                style={{
+                  position: "absolute",
+                  right: 16,
+                  bottom: insets.bottom + 20,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: theme.surface,
+                  borderColor: theme.border,
+                  borderWidth: 1,
+                  paddingHorizontal: 14,
+                  paddingVertical: 9,
+                  borderRadius: 20,
+                  shadowColor: theme.cardShadow,
+                  shadowOffset: { width: 0, height: 3 },
+                  shadowOpacity: 0.25,
+                  shadowRadius: 5,
+                  elevation: 5,
+                  zIndex: 10,
+                }}
+                onPress={handleViewAllAreas}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="scan-outline" size={15} color={theme.text} />
+                <Text style={{ fontSize: 11, fontWeight: "700", color: theme.text }}>
+                  See All Areas
+                </Text>
+              </TouchableOpacity>
+            )}
 
             {/* Floating Bottom Card matching the user's screenshot */}
             {selectedMapLocation && (
@@ -5705,9 +5707,9 @@ export default function Home() {
                   },
                 ]}
               >
-                {/* Header Row: Title, Address, Bookmark */}
+                {/* Header Row: Title, Address, Bookmark & Close */}
                 <View style={styles.bottomCardHeaderRow}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
+                  <View style={{ flex: 1, minWidth: 0, paddingRight: 8 }}>
                     <Text style={[styles.bottomCardTitle, { color: theme.text }]} numberOfLines={1}>
                       {selectedMapLocation.name}
                     </Text>
@@ -5716,30 +5718,46 @@ export default function Home() {
                     </Text>
                   </View>
 
-                  <TouchableOpacity
-                    style={[
-                      styles.bookmarkBtn,
-                      {
-                        backgroundColor: mapBookmarked[selectedMapLocation.id]
-                          ? theme.pillActiveBg
-                          : theme.background,
-                        borderColor: theme.border,
-                      },
-                    ]}
-                    onPress={() =>
-                      setMapBookmarked((prev) => ({
-                        ...prev,
-                        [selectedMapLocation.id]: !prev[selectedMapLocation.id],
-                      }))
-                    }
-                    activeOpacity={0.8}
-                  >
-                    <Ionicons
-                      name={mapBookmarked[selectedMapLocation.id] ? "bookmark" : "bookmark-outline"}
-                      size={20}
-                      color={mapBookmarked[selectedMapLocation.id] ? theme.pillActiveText : theme.text}
-                    />
-                  </TouchableOpacity>
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+                    <TouchableOpacity
+                      style={[
+                        styles.bookmarkBtn,
+                        {
+                          backgroundColor: mapBookmarked[selectedMapLocation.id]
+                            ? theme.pillActiveBg
+                            : theme.background,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                      onPress={() =>
+                        setMapBookmarked((prev) => ({
+                          ...prev,
+                          [selectedMapLocation.id]: !prev[selectedMapLocation.id],
+                        }))
+                      }
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons
+                        name={mapBookmarked[selectedMapLocation.id] ? "bookmark" : "bookmark-outline"}
+                        size={17}
+                        color={mapBookmarked[selectedMapLocation.id] ? theme.pillActiveText : theme.text}
+                      />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.bookmarkBtn,
+                        {
+                          backgroundColor: theme.background,
+                          borderColor: theme.border,
+                        },
+                      ]}
+                      onPress={() => setSelectedMapLocation(null)}
+                      activeOpacity={0.8}
+                    >
+                      <Ionicons name="close" size={17} color={theme.text} />
+                    </TouchableOpacity>
+                  </View>
                 </View>
 
                 {/* Stats Row: Price • 4 min • Available Spots */}
@@ -5747,34 +5765,34 @@ export default function Home() {
                   <View style={styles.statBadgeItem}>
                     <Ionicons
                       name={selectedMapLocation.is_electric_station && isVehicleElectric ? "flash" : "cash-outline"}
-                      size={14}
+                      size={13}
                       color={selectedMapLocation.is_electric_station && isVehicleElectric ? theme.evGreen : theme.textSecondary}
                     />
-                    <Text style={[styles.statBadgeText, { color: theme.text }]}>
+                    <Text style={[styles.statBadgeText, { color: theme.text }]} numberOfLines={1}>
                       {selectedMapLocation.is_electric_station && isVehicleElectric
-                        ? "EV Charge: 250 RWF / kWh"
-                        : `${selectedMapLocation.hourly_rate || 300} RWF /hr`}
+                        ? "250 RWF/kWh"
+                        : `${selectedMapLocation.hourly_rate || 300} RWF/hr`}
                     </Text>
                   </View>
                   <Text style={[styles.statDotSeparator, { color: theme.textSecondary }]}>•</Text>
                   <View style={styles.statBadgeItem}>
-                    <Ionicons name="time-outline" size={14} color={theme.textSecondary} />
-                    <Text style={[styles.statBadgeText, { color: theme.text }]}>
+                    <Ionicons name="time-outline" size={13} color={theme.textSecondary} />
+                    <Text style={[styles.statBadgeText, { color: theme.text }]} numberOfLines={1}>
                       4 min
                     </Text>
                   </View>
                   <Text style={[styles.statDotSeparator, { color: theme.textSecondary }]}>•</Text>
-                  <View style={styles.statBadgeItem}>
+                  <View style={[styles.statBadgeItem, { flexShrink: 1 }]}>
                     <Ionicons
                       name={selectedMapLocation.is_electric_station && isVehicleElectric ? "flash" : "car-outline"}
-                      size={14}
+                      size={13}
                       color={selectedMapLocation.is_electric_station && isVehicleElectric ? theme.evGreen : theme.textSecondary}
                     />
-                    <Text style={[styles.statBadgeText, { color: theme.text, fontWeight: "700" }]}>
+                    <Text style={[styles.statBadgeText, { color: theme.text, fontWeight: "700" }]} numberOfLines={1}>
                       {selectedMapLocation.available_spots ?? 0}{" "}
                       {selectedMapLocation.is_electric_station && isVehicleElectric
-                        ? "Charging Spots Available"
-                        : "Parking Spots Available"}
+                        ? "spots"
+                        : "spots free"}
                     </Text>
                   </View>
                 </View>
@@ -8343,11 +8361,11 @@ const styles = StyleSheet.create({
   },
   screenshotBottomCard: {
     position: "absolute",
-    bottom: Platform.OS === "ios" ? 34 : 20,
+    bottom: Platform.OS === "ios" ? 28 : 16,
     left: 16,
     right: 16,
-    borderRadius: 24,
-    padding: 18,
+    borderRadius: 22,
+    padding: 14,
     borderWidth: 1,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -8359,21 +8377,21 @@ const styles = StyleSheet.create({
   bottomCardHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
   },
   bottomCardTitle: {
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "700",
     letterSpacing: -0.3,
   },
   bottomCardAddress: {
     fontSize: 12,
-    marginTop: 3,
+    marginTop: 2,
   },
   bookmarkBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     borderWidth: 1,
     alignItems: "center",
     justifyContent: "center",
@@ -8381,14 +8399,15 @@ const styles = StyleSheet.create({
   cardStatsRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 12,
-    marginBottom: 12,
+    marginTop: 10,
+    marginBottom: 10,
     gap: 8,
   },
   statBadgeItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
+    minWidth: 0,
   },
   statBadgeText: {
     fontSize: 12,
@@ -8396,10 +8415,10 @@ const styles = StyleSheet.create({
   },
   statDotSeparator: {
     color: "#A1A1AA",
-    fontSize: 12,
+    fontSize: 11,
   },
   aerialPhotoContainer: {
-    height: 125,
+    height: 110,
     borderRadius: 14,
     overflow: "hidden",
     position: "relative",
@@ -8430,11 +8449,11 @@ const styles = StyleSheet.create({
   },
   choosePlaceBtn: {
     backgroundColor: "#09090B",
-    height: 48,
-    borderRadius: 24,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 14,
+    marginTop: 12,
     shadowColor: "rgba(0, 0, 0, 0.25)",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -8443,7 +8462,7 @@ const styles = StyleSheet.create({
   },
   choosePlaceBtnText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600",
   },
   cardZoneBadge: {

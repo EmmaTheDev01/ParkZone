@@ -710,7 +710,7 @@ const EVChargers = () => {
           data={filteredStations}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.nearbyCarouselList}
-          snapToInterval={width * 0.82 + 14}
+          snapToInterval={Math.min(width - 32, 350) + 14}
           decelerationRate="fast"
           renderItem={({ item }) => {
             const isSelected = selectedStation?.id === item.id;
@@ -719,7 +719,7 @@ const EVChargers = () => {
                 style={[
                   styles.nearbyStationCard,
                   {
-                    width: width * 0.82,
+                    width: Math.min(width - 32, 350),
                     backgroundColor: theme.surface,
                     borderColor: isSelected
                       ? theme.evGreen
@@ -747,7 +747,7 @@ const EVChargers = () => {
                       },
                     ]}
                   >
-                    <MaterialCommunityIcons name="ev-station" size={32} color={theme.evGreen} />
+                    <MaterialCommunityIcons name="ev-station" size={28} color={theme.evGreen} />
                   </View>
                 )}
 
@@ -762,7 +762,7 @@ const EVChargers = () => {
                       <Text style={[styles.metricLabelText, { color: theme.textSecondary }]}>
                         Distance
                       </Text>
-                      <Text style={[styles.metricValText, { color: theme.text }]}>
+                      <Text style={[styles.metricValText, { color: theme.text }]} numberOfLines={1}>
                         {item.distance || "-"}
                       </Text>
                     </View>
@@ -771,16 +771,16 @@ const EVChargers = () => {
                       <Text style={[styles.metricLabelText, { color: theme.textSecondary }]}>
                         Power
                       </Text>
-                      <Text style={[styles.metricValText, { color: theme.evGreen }]}>
+                      <Text style={[styles.metricValText, { color: theme.evGreen }]} numberOfLines={1}>
                         {item.chargers[0]?.max_output_kw || 0} kW
                       </Text>
                     </View>
 
                     <View style={styles.metricItemCol}>
                       <Text style={[styles.metricLabelText, { color: theme.textSecondary }]}>
-                        Charge Rate
+                        Tariff
                       </Text>
-                      <Text style={[styles.metricValText, { color: theme.evGreen }]}>
+                      <Text style={[styles.metricValText, { color: theme.evGreen }]} numberOfLines={1}>
                         {item.tariff || "250 RWF/kWh"}
                       </Text>
                     </View>
@@ -2663,49 +2663,51 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
   nearbyThumbImg: {
-    width: 90,
-    height: 90,
-    borderRadius: 18,
+    width: 78,
+    height: 78,
+    borderRadius: 16,
   },
   nearbyInfoCol: {
     flex: 1,
     justifyContent: "space-between",
+    minWidth: 0,
   },
   nearbyTitleText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     letterSpacing: -0.2,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   nearbyMetricsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
-    marginBottom: 10,
+    gap: 8,
+    marginBottom: 8,
   },
   metricItemCol: {
-    minWidth: 50,
+    flex: 1,
+    minWidth: 0,
   },
   metricLabelText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "400",
     marginBottom: 2,
   },
   metricValText: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "600",
   },
   mapDirectionBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    borderRadius: 20,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
+    borderRadius: 18,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
   },
   mapDirectionBtnText: {
-    fontSize: 12,
-    fontWeight: "500",
+    fontSize: 11,
+    fontWeight: "600",
   },
 });
