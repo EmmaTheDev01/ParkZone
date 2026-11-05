@@ -39,9 +39,10 @@ CREATE INDEX IF NOT EXISTS idx_profiles_role ON public.profiles(role);
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
-CREATE POLICY "Users can view their own profile"
+DROP POLICY IF EXISTS "Public can view basic profiles" ON public.profiles;
+CREATE POLICY "Public can view basic profiles"
     ON public.profiles FOR SELECT
-    USING (auth.uid() = id);
+    USING (true);
 
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile"
@@ -938,6 +939,8 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.parking_locations TO anon, 
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.vehicles TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.parking_tickets TO anon, authenticated, service_role;
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.ev_charging_sessions TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE public.location_reviews TO anon, authenticated, service_role;
+GRANT SELECT, INSERT, UPDATE ON TABLE public.profiles TO anon, authenticated, service_role;
 
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated, service_role;
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated, service_role;

@@ -570,17 +570,74 @@ export async function fetchLocationReviews(locationId: string): Promise<Location
             .order("created_at", { ascending: false });
 
         if (!error && data) {
-            return data.map((r: any) => ({
-                id: r.id,
-                location_id: r.location_id,
-                user_id: r.user_id,
-                user_name: r.profiles?.full_name || "Verified Motorist",
-                user_avatar: r.profiles?.avatar_url || undefined,
-                rating: Number(r.rating) || 5,
-                comment: r.comment || "",
-                tags: Array.isArray(r.tags) ? r.tags : [],
-                created_at: r.created_at,
-            }));
+            // Load cached reviewer profiles in case RLS blocked the foreign-key join
+            let cachedProfiles: Record<string, { full_name?: string; avatar_url?: string }> = {};
+            try {
+                const raw = await AsyncStorage.getItem("@parkzone_cached_profiles");
+                if (raw) cachedProfiles = JSON.parse(raw);
+            } catch {}
+
+            // For reviews where profiles was blocked by RLS, attempt batch fetch
+            const missingUserIds = data
+                .filter((r: any) => (!r.profiles || !r.profiles.full_name) && r.user_id && !cachedProfiles[r.user_id])
+                .map((r: any) => r.user_id);
+
+            if (missingUserIds.length > 0) {
+                try {
+                    const { data: profBatch } = await supabase
+                        .from("profiles")
+                        .select("id, full_name, avatar_url")
+                        .in("id", missingUserIds);
+                    (profBatch || []).forEach((p: any) => {
+                        cachedProfiles[p.id] = {
+                            full_name: p.full_name,
+                            avatar_url: p.avatar_url,
+                        };
+                    });
+                    await AsyncStorage.setItem("@parkzone_cached_profiles", JSON.stringify(cachedProfiles));
+                } catch {}
+            }
+
+            // Also check currently signed-in user
+            const { data: { user: currentUser } } = await supabase.auth.getUser();
+            if (currentUser?.id) {
+                const myName = currentUser.user_metadata?.full_name || currentUser.user_metadata?.name;
+                const myAvatar = currentUser.user_metadata?.avatar_url || currentUser.user_metadata?.picture;
+                if (myName || myAvatar) {
+                    cachedProfiles[currentUser.id] = {
+                        full_name: myName || cachedProfiles[currentUser.id]?.full_name,
+                        avatar_url: myAvatar || cachedProfiles[currentUser.id]?.avatar_url,
+                    };
+                }
+            }
+
+            return data.map((r: any) => {
+                const joinedProf = r.profiles;
+                const cached = cachedProfiles[r.user_id];
+                const isCurrentUser = r.user_id === currentUser?.id;
+
+                const resolvedName =
+                    joinedProf?.full_name ||
+                    cached?.full_name ||
+                    (isCurrentUser ? (currentUser?.user_metadata?.full_name || currentUser?.email?.split("@")[0] || "You") : "Verified Motorist");
+
+                const resolvedAvatar =
+                    joinedProf?.avatar_url ||
+                    cached?.avatar_url ||
+                    (isCurrentUser ? (currentUser?.user_metadata?.avatar_url || currentUser?.user_metadata?.picture) : undefined);
+
+                return {
+                    id: r.id,
+                    location_id: r.location_id,
+                    user_id: r.user_id,
+                    user_name: resolvedName,
+                    user_avatar: resolvedAvatar,
+                    rating: Number(r.rating) || 5,
+                    comment: r.comment || "",
+                    tags: Array.isArray(r.tags) ? r.tags : [],
+                    created_at: r.created_at,
+                };
+            });
         }
     } catch (err) {
         console.warn("fetchLocationReviews error:", err);
@@ -608,6 +665,35 @@ export async function submitLocationReview(payload: {
         if (!user?.id) {
             return { error: "Please sign in to submit a verified motorist review." };
         }
+
+        await ensureUserProfile(user);
+
+        // Fetch user's profile to resolve full name and avatar
+        const { data: prof } = await supabase
+            .from("profiles")
+            .select("full_name, avatar_url")
+            .eq("id", user.id)
+            .maybeSingle();
+
+        const authorName =
+            prof?.full_name ||
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            (user.email ? user.email.split("@")[0] : "Verified Motorist");
+
+        const authorAvatar =
+            prof?.avatar_url ||
+            user.user_metadata?.avatar_url ||
+            user.user_metadata?.picture ||
+            undefined;
+
+        // Persist author profile to local cache for instant zero-latency retrieval
+        try {
+            const rawCached = await AsyncStorage.getItem("@parkzone_cached_profiles");
+            const cachedProfiles = rawCached ? JSON.parse(rawCached) : {};
+            cachedProfiles[user.id] = { full_name: authorName, avatar_url: authorAvatar };
+            await AsyncStorage.setItem("@parkzone_cached_profiles", JSON.stringify(cachedProfiles));
+        } catch {}
 
         const newRecord = {
             location_id: payload.locationId,
@@ -643,8 +729,8 @@ export async function submitLocationReview(payload: {
             id: insertedData?.id || `rev_${Date.now()}`,
             location_id: payload.locationId,
             user_id: user.id,
-            user_name: insertedData?.profiles?.full_name || user.user_metadata?.full_name || "Verified Motorist",
-            user_avatar: insertedData?.profiles?.avatar_url || user.user_metadata?.avatar_url,
+            user_name: insertedData?.profiles?.full_name || authorName,
+            user_avatar: insertedData?.profiles?.avatar_url || authorAvatar,
             rating: payload.rating,
             comment: payload.comment.trim(),
             tags: payload.tags || [],

@@ -230,6 +230,54 @@ const TopDownCarGraphic = ({ isDark = false }: { isDark?: boolean }) => {
   );
 };
 
+/**
+ * Motorist Profile Avatar for Location Reviews
+ */
+const ReviewItemAvatar = ({
+  name,
+  avatarUrl,
+  theme,
+}: {
+  name: string;
+  avatarUrl?: string;
+  theme: any;
+}) => {
+  const [imgError, setImgError] = useState(false);
+  const showImage = Boolean(avatarUrl && avatarUrl.trim().length > 0 && !imgError);
+  const initial = (name || "M").trim().charAt(0).toUpperCase();
+
+  return (
+    <View
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: theme.isDark ? "#27272A" : "#F4F4F5",
+        borderWidth: 1,
+        borderColor: theme.border,
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+      }}
+    >
+      {showImage ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={{ width: "100%", height: "100%" }}
+          resizeMode="cover"
+          onError={() => setImgError(true)}
+        />
+      ) : initial && initial !== "V" ? (
+        <Text style={{ fontSize: 13, fontWeight: "700", color: theme.text }}>
+          {initial}
+        </Text>
+      ) : (
+        <Ionicons name="person" size={16} color={theme.text} />
+      )}
+    </View>
+  );
+};
+
 export default function Home() {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -2425,21 +2473,12 @@ export default function Home() {
                       style={[styles.reviewCard, { backgroundColor: theme.surface, borderColor: theme.border }]}
                     >
                       <View style={styles.reviewAuthorRow}>
-                        <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-                          <View
-                            style={{
-                              width: 34,
-                              height: 34,
-                              borderRadius: 17,
-                              backgroundColor: theme.background,
-                              borderWidth: 1,
-                              borderColor: theme.border,
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                          >
-                            <Ionicons name="person" size={16} color={theme.text} />
-                          </View>
+                        <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                          <ReviewItemAvatar
+                            name={rev.user_name}
+                            avatarUrl={rev.user_avatar}
+                            theme={theme}
+                          />
                           <View>
                             <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                               <Text style={[styles.reviewAuthorName, { color: theme.text }]}>
