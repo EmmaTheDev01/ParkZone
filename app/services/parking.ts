@@ -668,36 +668,16 @@ export async function submitLocationReview(payload: {
 // LOCATIONS & SPACES (Real-time Cloud Data from Admin Panel)
 // ------------------------------------------------------------------------------
 
-const REGULAR_SPACE_IMAGE_POOL = [
-    "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&w=800&q=80",
-];
-
-const EV_SPACE_IMAGE_POOL = [
-    "https://images.unsplash.com/photo-1593941707882-a5bba14938c7?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1620896727255-a2f0bfbc05f0?auto=format&fit=crop&w=800&q=80",
-    "https://images.unsplash.com/photo-1558441719-8b489c63f7bc?auto=format&fit=crop&w=800&q=80",
-];
-
 export function resolveSpaceImageUrl(
     seed?: string | null,
     kind: "regular" | "ev" | "handicap" = "regular",
     fallbackUrl?: string | null
-): string {
+): string | undefined {
     if (fallbackUrl && fallbackUrl.trim().length > 0) {
         return fallbackUrl.trim();
     }
-    const pool = kind === "ev" ? EV_SPACE_IMAGE_POOL : REGULAR_SPACE_IMAGE_POOL;
-    const key = (seed || "parkzone").trim();
-    let hash = 0;
-    for (let i = 0; i < key.length; i += 1) {
-        hash = (hash * 31 + key.charCodeAt(i)) | 0;
-    }
-    return pool[Math.abs(hash) % pool.length];
+    // Dynamic database image strictly: return undefined when no DB image is present
+    return undefined;
 }
 
 export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
@@ -764,21 +744,7 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             loc.zone_code ||
             (isElectric ? "Zone A" : isHandicap ? "Zone E" : "Zone A");
 
-        const hasDbImage = Boolean(loc.image_url && loc.image_url.trim().length > 0);
-        const resolvedImage = hasDbImage
-            ? loc.image_url!.trim()
-            : resolveSpaceImageUrl(
-                  loc.name || loc.qr_code_identifier || loc.id,
-                  isElectric ? "ev" : isHandicap ? "handicap" : "regular"
-              );
-
-        if (!hasDbImage && loc.id) {
-            supabase
-                .from("parking_locations")
-                .update({ image_url: resolvedImage })
-                .eq("id", loc.id)
-                .then(() => {});
-        }
+        const dbImage = loc.image_url && loc.image_url.trim().length > 0 ? loc.image_url.trim() : undefined;
 
         return {
             id: loc.id,
@@ -801,7 +767,7 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             is_electric_station: isElectric,
             is_handicap_facility: isHandicap,
             zone_code: zoneCode,
-            image_url: resolvedImage,
+            image_url: dbImage,
             created_at: loc.created_at,
             updated_at: loc.updated_at,
         };
@@ -920,22 +886,12 @@ export async function fetchSpotsForLocation(
         const wattPower = s.watt_power_kw ?? (isEv ? matchingCharger?.max_output_kw || (normalizedZone === "Zone A" ? 150 : normalizedZone === "Zone B" ? 50 : 22) : undefined);
         const priceKwh = s.price_per_kwh_rwf ?? (isEv ? matchingCharger?.price_per_kwh : undefined);
 
-        const hasSpaceImage = Boolean(s.image_url && s.image_url.trim().length > 0);
-        const resolvedSpaceImage = hasSpaceImage
-            ? s.image_url!.trim()
-            : resolveSpaceImageUrl(
-                  `${locationId}-${s.space_number}`,
-                  s.space_type || (isEv ? "ev" : "regular"),
-                  locRow?.image_url
-              );
-
-        if (!hasSpaceImage && isValidUuid(s.id)) {
-            supabase
-                .from("parking_spaces")
-                .update({ image_url: resolvedSpaceImage })
-                .eq("id", s.id)
-                .then(() => {});
-        }
+        const spaceDbImage =
+            s.image_url && s.image_url.trim().length > 0
+                ? s.image_url.trim()
+                : locRow?.image_url && locRow.image_url.trim().length > 0
+                ? locRow.image_url.trim()
+                : undefined;
 
         const activeTicketPlate =
             occupiedSpaceIds.get(s.id) || occupiedBayNumbers.get(s.space_number.toUpperCase());
@@ -954,7 +910,7 @@ export async function fetchSpotsForLocation(
         return {
             ...s,
             zone_code: normalizedZone,
-            image_url: resolvedSpaceImage,
+            image_url: spaceDbImage,
             is_occupied: effectiveOccupied,
             current_vehicle_plate: s.current_vehicle_plate || activeTicketPlate || null,
             watt_power_kw: wattPower,
@@ -1020,8 +976,7 @@ export async function fetchSpotsForLocation(
                     zone_code: zn,
                     space_type: "ev",
                     image_url:
-                        ch.image_url ||
-                        resolveSpaceImageUrl(`${locationId}-${bayNum}`, "ev", locRow?.image_url),
+                        ch.image_url?.trim() || locRow?.image_url?.trim() || undefined,
                     is_occupied: busy,
                     current_vehicle_plate: occupiedBayNumbers.get(bayNum.toUpperCase()) || null,
                     qr_code_token: `QR-${bayNum}`,
@@ -1078,7 +1033,7 @@ export async function fetchSpotsForLocation(
                 space_number: bayNum,
                 zone_code: zn,
                 space_type: spaceType,
-                image_url: resolveSpaceImageUrl(`${locationId}-${bayNum}`, spaceType, locRow?.image_url),
+                image_url: locRow?.image_url?.trim() || undefined,
                 is_occupied: Boolean(activePlate),
                 current_vehicle_plate: activePlate,
                 qr_code_token: `QR-${bayNum}`,
@@ -1258,7 +1213,7 @@ export async function fetchEvChargers(locationId: string): Promise<EvChargerTele
             flat_rate_full_rwf: s.daily_rate || 10000,
             flat_rate_quick_rwf: s.hourly_rate ? s.hourly_rate * 6 : 9000,
             quick_session_threshold_mins: 30,
-            image_url: resolveSpaceImageUrl(s.space_number || `EV-0${idx + 1}`, "ev"),
+            image_url: s.image_url?.trim() || undefined,
         }));
     }
 
@@ -1529,8 +1484,8 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             latitude: -1.942,
             longitude: 30.113,
             tariff: "250 RWF/kWh",
-            image: resolveSpaceImageUrl("Nyarutarama EV Charging Hub", "ev"),
-            image_url: resolveSpaceImageUrl("Nyarutarama EV Charging Hub", "ev"),
+            image: undefined,
+            image_url: undefined,
             chargers: [
                 {
                     id: "c0000000-0000-0000-0000-000000000001",
@@ -1551,7 +1506,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                     flat_rate_full_rwf: 10000,
                     flat_rate_quick_rwf: 9000,
                     quick_session_threshold_mins: 30,
-                    image_url: resolveSpaceImageUrl("EV-01", "ev"),
+                    image_url: undefined,
                 },
                 {
                     id: "c0000000-0000-0000-0000-000000000002",
@@ -1572,7 +1527,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                     flat_rate_full_rwf: 10000,
                     flat_rate_quick_rwf: 9000,
                     quick_session_threshold_mins: 30,
-                    image_url: resolveSpaceImageUrl("EV-02", "ev"),
+                    image_url: undefined,
                 },
                 {
                     id: "c0000000-0000-0000-0000-000000000003",
@@ -1593,7 +1548,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                     flat_rate_full_rwf: 10000,
                     flat_rate_quick_rwf: 9000,
                     quick_session_threshold_mins: 30,
-                    image_url: resolveSpaceImageUrl("EV-03", "ev"),
+                    image_url: undefined,
                 },
             ],
         },
@@ -1619,10 +1574,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
 
     const chargersByLoc = new Map<string, EvChargerTelemetry[]>();
     (allChargers || []).forEach((c: any) => {
-        const hasChargerImg = Boolean(c.image_url && c.image_url.trim().length > 0);
-        const chargerImg = hasChargerImg
-            ? c.image_url.trim()
-            : resolveSpaceImageUrl(c.station_identifier || c.id, "ev");
+        const chargerImg = c.image_url && c.image_url.trim().length > 0 ? c.image_url.trim() : undefined;
         const mapped: EvChargerTelemetry = {
             ...c,
             image_url: chargerImg,
@@ -1690,7 +1642,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                 flat_rate_full_rwf: s.daily_rate || 10000,
                 flat_rate_quick_rwf: s.hourly_rate ? s.hourly_rate * 6 : 9000,
                 quick_session_threshold_mins: 30,
-                image_url: resolveSpaceImageUrl(s.space_number || `EV-0${idx + 1}`, "ev"),
+                image_url: s.image_url?.trim() || loc.image_url?.trim() || undefined,
             }));
         }
 
@@ -1715,24 +1667,13 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                 flat_rate_full_rwf: 10000,
                 flat_rate_quick_rwf: 9000,
                 quick_session_threshold_mins: 30,
-                image_url: resolveSpaceImageUrl(`BAY-0${num}`, "ev"),
+                image_url: loc.image_url?.trim() || undefined,
             }));
         }
 
         const quick = chargers[0]?.flat_rate_quick_rwf || 9000;
         const full = chargers[0]?.flat_rate_full_rwf || 10000;
-        const hasLocImg = Boolean(loc.image_url && loc.image_url.trim().length > 0);
-        const resolvedStationImg = hasLocImg
-            ? loc.image_url.trim()
-            : resolveSpaceImageUrl(loc.name || loc.id, "ev");
-
-        if (!hasLocImg && loc.id) {
-            supabase
-                .from("parking_locations")
-                .update({ image_url: resolvedStationImg })
-                .eq("id", loc.id)
-                .then(() => {});
-        }
+        const dbStationImg = loc.image_url && loc.image_url.trim().length > 0 ? loc.image_url.trim() : undefined;
 
         stations.push({
             id: loc.id,
@@ -1742,8 +1683,8 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             latitude: Number(loc.latitude),
             longitude: Number(loc.longitude),
             tariff: "250 RWF/kWh",
-            image: resolvedStationImg,
-            image_url: resolvedStationImg,
+            image: dbStationImg,
+            image_url: dbStationImg,
             chargers,
         });
     }
@@ -1769,9 +1710,7 @@ export async function lookupSpaceByQrOrNumber(rawTokenOrBay: string) {
     if (byQr) {
         return {
             ...byQr,
-            image_url:
-                byQr.image_url?.trim() ||
-                resolveSpaceImageUrl(`${byQr.location_id}-${byQr.space_number}`, byQr.space_type || "regular"),
+            image_url: byQr.image_url?.trim() || undefined,
         };
     }
 
@@ -1785,9 +1724,7 @@ export async function lookupSpaceByQrOrNumber(rawTokenOrBay: string) {
     if (!byNumber) return null;
     return {
         ...byNumber,
-        image_url:
-            byNumber.image_url?.trim() ||
-            resolveSpaceImageUrl(`${byNumber.location_id}-${byNumber.space_number}`, byNumber.space_type || "regular"),
+        image_url: byNumber.image_url?.trim() || undefined,
     };
 }
 
@@ -1886,10 +1823,7 @@ export async function fetchUserParkingHistory(userId?: string): Promise<ParkingH
         const spaceOrLocImage =
             sp?.image_url?.trim() ||
             loc?.image_url?.trim() ||
-            resolveSpaceImageUrl(
-                `${loc?.id || loc?.name || "lot"}-${sp?.space_number || t.id}`,
-                sp?.space_type || (loc?.is_electric_station ? "ev" : "regular")
-            );
+            undefined;
 
         const durationText = isCompleted
             ? `${hrs}h ${mins < 10 ? "0" : ""}${mins}m`
@@ -1953,7 +1887,7 @@ export async function fetchUserParkingHistory(userId?: string): Promise<ParkingH
         const loc = Array.isArray(ev.parking_locations) ? ev.parking_locations[0] : ev.parking_locations;
         const evImage =
             loc?.image_url?.trim() ||
-            resolveSpaceImageUrl(`${loc?.id || loc?.name || "ev"}-${ev.bay_number}`, "ev");
+            undefined;
 
         const durationText = isCompleted
             ? `${mins}m Charging`

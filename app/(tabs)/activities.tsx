@@ -38,7 +38,6 @@ import {
   fetchActiveParkingTicket,
   fetchUserParkingHistory,
   fetchUserVehicles,
-  resolveSpaceImageUrl,
   ParkingHistoryRecord,
 } from "../services/parking";
 import { initiateMobilePayment } from "../services/mobilePayment";
@@ -307,10 +306,7 @@ const Activities = () => {
           imageUrl:
             sp?.image_url?.trim() ||
             loc?.image_url?.trim() ||
-            resolveSpaceImageUrl(
-              `${loc?.id || loc?.name || "lot"}-${sp?.space_number || liveTicket.id}`,
-              sp?.space_type || "regular"
-            ),
+            undefined,
           durationHours: derivedHours,
           hourlyRate,
           receiptNumber: liveTicket.ticket_number,
@@ -346,10 +342,7 @@ const Activities = () => {
             const fineSpaceImage =
               sp?.image_url?.trim() ||
               loc?.image_url?.trim() ||
-              resolveSpaceImageUrl(
-                `${loc?.id || loc?.name || "fine"}-${sp?.space_number || f.id}`,
-                sp?.space_type || "regular"
-              );
+              undefined;
             const isPaid = f.payment_status === "paid";
             mergedRecords.push({
               id: f.id,
