@@ -710,7 +710,7 @@ const EVChargers = () => {
           data={filteredStations}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.nearbyCarouselList}
-          snapToInterval={Math.min(width - 32, 350) + 14}
+          snapToInterval={width - 40 + 14}
           decelerationRate="fast"
           renderItem={({ item }) => {
             const isSelected = selectedStation?.id === item.id;
@@ -719,7 +719,7 @@ const EVChargers = () => {
                 style={[
                   styles.nearbyStationCard,
                   {
-                    width: Math.min(width - 32, 350),
+                    width: width - 40,
                     backgroundColor: theme.surface,
                     borderColor: isSelected
                       ? theme.evGreen
@@ -731,25 +731,29 @@ const EVChargers = () => {
                 onPress={() => handleSelectLocation(item)}
                 activeOpacity={0.88}
               >
-                {/* Station Thumbnail Image */}
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={styles.nearbyThumbImg} />
-                ) : (
-                  <View
-                    style={[
-                      styles.nearbyThumbImg,
-                      {
-                        backgroundColor: theme.surfaceMuted,
-                        borderWidth: 1,
-                        borderColor: theme.border,
-                        alignItems: "center",
-                        justifyContent: "center",
-                      },
-                    ]}
-                  >
-                    <MaterialCommunityIcons name="ev-station" size={28} color={theme.evGreen} />
-                  </View>
-                )}
+                {/* Station Thumbnail Image with robust fallback */}
+                <View
+                  style={[
+                    styles.nearbyThumbImg,
+                    {
+                      backgroundColor: theme.surfaceMuted,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                      overflow: "hidden",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    },
+                  ]}
+                >
+                  <MaterialCommunityIcons name="ev-station" size={32} color={theme.evGreen} />
+                  {Boolean(item.image) && (
+                    <Image
+                      source={{ uri: item.image }}
+                      style={StyleSheet.absoluteFillObject}
+                      resizeMode="cover"
+                    />
+                  )}
+                </View>
 
                 {/* Right Info Column */}
                 <View style={styles.nearbyInfoCol}>
@@ -771,7 +775,7 @@ const EVChargers = () => {
                       <Text style={[styles.metricLabelText, { color: theme.textSecondary }]}>
                         Power
                       </Text>
-                      <Text style={[styles.metricValText, { color: theme.evGreen }]} numberOfLines={1}>
+                      <Text style={[styles.metricValText, { color: theme.evGreen }]}>
                         {item.chargers[0]?.max_output_kw || 0} kW
                       </Text>
                     </View>
@@ -807,6 +811,7 @@ const EVChargers = () => {
                             : theme.evGreen,
                         },
                       ]}
+                      numberOfLines={1}
                     >
                       {item.chargers.some(c => c.operational_status === "faulted")
                         ? "Faulted (Offline)"
@@ -2652,20 +2657,20 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   nearbyStationCard: {
-    borderRadius: 24,
-    padding: 14,
+    borderRadius: 22,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
-    gap: 14,
+    gap: 12,
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 6,
   },
   nearbyThumbImg: {
-    width: 78,
-    height: 78,
-    borderRadius: 16,
+    width: 72,
+    height: 72,
+    borderRadius: 14,
   },
   nearbyInfoCol: {
     flex: 1,
@@ -2673,16 +2678,16 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   nearbyTitleText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     letterSpacing: -0.2,
     marginBottom: 4,
   },
   nearbyMetricsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
-    marginBottom: 8,
+    gap: 6,
+    marginBottom: 6,
   },
   metricItemCol: {
     flex: 1,
