@@ -394,13 +394,16 @@ export default function Home() {
   const isVehicleElectric =
     selectedVehicle?.vehicle_type === "ev" ||
     driverVehicle?.vehicleType === "ev" ||
-    Boolean(selectedVehicle?.brand?.toLowerCase().includes("tesla")) ||
-    Boolean(selectedVehicle?.brand?.toLowerCase().includes("byd"));
+    (selectedVehicle as any)?.fuel_type === "electric" ||
+    Boolean(selectedVehicle?.brand && /\b(tesla|byd|rivian|lucid|polestar)\b/i.test(selectedVehicle.brand)) ||
+    Boolean(selectedVehicle?.make_model && /\b(tesla|byd|rivian|lucid|polestar|ioniq|leaf|taycan)\b/i.test(selectedVehicle.make_model)) ||
+    Boolean(driverVehicle?.makeModel && /\b(tesla|byd|rivian|lucid|polestar|ioniq|leaf|taycan)\b/i.test(driverVehicle.makeModel)) ||
+    Boolean(driverVehicle?.batteryCapacityKwh && driverVehicle.batteryCapacityKwh > 0);
 
   const isVehicleHandicap =
     selectedVehicle?.vehicle_type === "handicap" ||
     driverVehicle?.parkingPermitType === "Handicap Concession" ||
-    Boolean(selectedVehicle?.handicap_permit_number);
+    Boolean(selectedVehicle?.handicap_permit_number && selectedVehicle.handicap_permit_number.trim().length > 0);
 
   // Details View in-lot search query
   const [detailsSearchQuery, setDetailsSearchQuery] = useState("");
@@ -1004,7 +1007,8 @@ export default function Home() {
 
         const resolvedAvatar = cachedAvatar || profileRes?.data?.avatar_url || "";
         setAvatarUrl(resolvedAvatar);
-        setSelectedVehicle(vehicles[0] || null);
+        const activeVeh = vehicles.find((v) => v.is_default) || vehicles[0] || null;
+        setSelectedVehicle(activeVeh);
         if (vehicles && vehicles.length > 0) {
           const userColors: string[] = [];
           const plateMap: Record<string, string> = {};
@@ -1226,7 +1230,7 @@ export default function Home() {
       const evBill = 9000;
       initiateMobilePayment(evBill).catch(() => {});
       router.push({
-        pathname: "/charging_receipt",
+        pathname: "/ev_charging",
         params: {
           locationId: selectedLocation.id,
           chargerId: selectedSpace.id,
@@ -1613,7 +1617,7 @@ export default function Home() {
       setConfirmBookingSheetVisible(false);
       setSelectedParkForSheet(null);
       router.push({
-        pathname: "/charging_receipt",
+        pathname: "/ev_charging",
         params: {
           locationId: targetLocId,
           name: targetName,
@@ -1626,6 +1630,7 @@ export default function Home() {
           durationMinutes: String(selectedHrs * 60),
           durationSeconds: String(selectedHrs * 3600),
           billAmount: String(evBill),
+          isPaid: "true",
           receiptNumber: `PZ-EV-${Date.now().toString().slice(-4)}`,
         },
       });
@@ -4119,7 +4124,9 @@ export default function Home() {
                   >
                     {sheetAvailableZones.map((zn) => {
                       const isSelected = selectedSheetZone === zn;
-                      const isZoneDisabled = (zn === "Zone A" && !isVehicleElectric) || (zn === "Zone E" && !isVehicleHandicap);
+                      const isZoneEv = Boolean(selectedParkForSheet?.is_electric_station) && (zn === "Zone A" || zn.toLowerCase().includes("ev"));
+                      const isZoneHc = Boolean(selectedParkForSheet?.is_handicap_facility) || zn === "Zone E";
+                      const isZoneDisabled = (isZoneEv && !isVehicleElectric) || (isZoneHc && !isVehicleHandicap);
                       return (
                         <TouchableOpacity
                           key={zn}
@@ -4468,16 +4475,52 @@ export default function Home() {
               )}
 
               {/* Sticky Continue Button with Circle Arrow */}
-              <TouchableOpacity
-                style={styles.sheetContinueBtn}
-                onPress={() => setConfirmBookingSheetVisible(true)}
-                activeOpacity={0.88}
-              >
-                <Text style={styles.sheetContinueBtnText}>Continue</Text>
-                <View style={styles.sheetContinueCircleArrow}>
-                  <Ionicons name="arrow-forward" size={18} color="#09090B" />
-                </View>
-              </TouchableOpacity>
+              {(() => {
+                const matched = sheetSpaces.find((s) => s.space_number === selectedSheetBay);
+                const isEvBay = matched?.space_type === "ev" || Boolean(selectedParkForSheet?.is_electric_station);
+                const canChargeImmediately = isEvBay && isVehicleElectric;
+
+                return (
+                  <TouchableOpacity
+                    style={[styles.sheetContinueBtn, canChargeImmediately && { backgroundColor: theme.evGreen }]}
+                    onPress={() => {
+                      if (canChargeImmediately) {
+                        const activePlate = selectedVehicle?.plate_number || driverVehicle?.plateNumber || "";
+                        const kw = matched?.watt_power_kw || 120;
+                        setSelectedParkForSheet(null);
+                        router.push({
+                          pathname: "/ev_charging",
+                          params: {
+                            locationId: selectedParkForSheet?.id || "",
+                            name: selectedParkForSheet?.name || "EV Charging Station",
+                            bayNumber: selectedSheetBay || "EV-01",
+                            plate: activePlate,
+                            powerKw: String(kw),
+                            soc: String(driverVehicle?.batteryLevelPercent || 25),
+                            isPaid: "true",
+                            billAmount: "9000",
+                            currency: "RWF",
+                          },
+                        });
+                      } else {
+                        setConfirmBookingSheetVisible(true);
+                      }
+                    }}
+                    activeOpacity={0.88}
+                  >
+                    <Text style={[styles.sheetContinueBtnText, canChargeImmediately && { color: theme.evGreenText }]}>
+                      {canChargeImmediately ? "Charge Immediately" : "Continue"}
+                    </Text>
+                    <View style={[styles.sheetContinueCircleArrow, canChargeImmediately && { backgroundColor: theme.surface }]}>
+                      <Ionicons
+                        name={canChargeImmediately ? "flash" : "arrow-forward"}
+                        size={18}
+                        color={canChargeImmediately ? theme.evGreen : "#09090B"}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                );
+              })()}
 
               {/* EV Bay Detail Inspection Modal */}
               {inspectedSheetSpace && selectedParkForSheet && (
@@ -4489,7 +4532,27 @@ export default function Home() {
                   onStartCharging={(details) => {
                     setInspectedSheetSpace(null);
                     setSelectedSheetBay(details.bayNumber);
-                    setConfirmBookingSheetVisible(true);
+                    if (isVehicleElectric) {
+                      const activePlate = selectedVehicle?.plate_number || driverVehicle?.plateNumber || "";
+                      const kw = inspectedSheetSpace.watt_power_kw || details.maxKw || 120;
+                      setSelectedParkForSheet(null);
+                      router.push({
+                        pathname: "/ev_charging",
+                        params: {
+                          locationId: selectedParkForSheet.id,
+                          name: selectedParkForSheet.name,
+                          bayNumber: details.bayNumber,
+                          plate: activePlate,
+                          powerKw: String(kw),
+                          soc: String(driverVehicle?.batteryLevelPercent || 25),
+                          isPaid: "true",
+                          billAmount: "9000",
+                          currency: "RWF",
+                        },
+                      });
+                    } else {
+                      setConfirmBookingSheetVisible(true);
+                    }
                   }}
                 />
               )}

@@ -1222,21 +1222,47 @@ const EVChargers = () => {
                 style={[
                   styles.sheetContinuePillBtn,
                   {
-                    backgroundColor: theme.primaryBtnBg,
+                    backgroundColor: driverVehicle.vehicleType === "ev" ? theme.evGreen : theme.primaryBtnBg,
                     opacity: !selectedBay && (!sheetStation?.chargers || sheetStation.chargers.length === 0) ? 0.5 : 1,
                   },
                 ]}
                 onPress={() => {
-                  if (!selectedBay && sheetStation?.chargers?.[0]?.station_identifier) {
-                    setSelectedBay(sheetStation.chargers[0].station_identifier);
+                  const bayToUse = selectedBay || sheetStation?.chargers?.[0]?.station_identifier || "EV-01";
+                  if (!selectedBay) {
+                    setSelectedBay(bayToUse);
                   }
-                  setConfirmModalVisible(true);
+                  if (driverVehicle.vehicleType === "ev") {
+                    const matched = sheetStation?.chargers?.find((c) => c.station_identifier === bayToUse) || sheetStation?.chargers?.[0];
+                    setSheetStation(null);
+                    router.push({
+                      pathname: "/ev_charging",
+                      params: {
+                        locationId: sheetStation?.id || "",
+                        name: sheetStation?.name || "EV Charging Station",
+                        bayNumber: bayToUse,
+                        plate: driverVehicle.plateNumber || "EV",
+                        powerKw: String(matched?.max_output_kw || 120),
+                        soc: String(driverVehicle.batteryLevelPercent || 25),
+                        isPaid: "true",
+                        billAmount: "9000",
+                        currency: "RWF",
+                      },
+                    });
+                  } else {
+                    setConfirmModalVisible(true);
+                  }
                 }}
                 activeOpacity={0.88}
               >
-                <Text style={[styles.sheetContinueBtnText, { color: theme.primaryBtnText }]}>Continue</Text>
+                <Text style={[styles.sheetContinueBtnText, { color: driverVehicle.vehicleType === "ev" ? theme.evGreenText : theme.primaryBtnText }]}>
+                  {driverVehicle.vehicleType === "ev" ? "Charge Immediately" : "Continue"}
+                </Text>
                 <View style={[styles.circleArrowBtnBox, { backgroundColor: theme.background }]}>
-                  <Ionicons name="arrow-forward" size={16} color={theme.text} />
+                  <Ionicons
+                    name={driverVehicle.vehicleType === "ev" ? "flash" : "arrow-forward"}
+                    size={16}
+                    color={driverVehicle.vehicleType === "ev" ? theme.evGreen : theme.text}
+                  />
                 </View>
               </TouchableOpacity>
             </View>
@@ -1251,7 +1277,25 @@ const EVChargers = () => {
                 onStartCharging={(details) => {
                   setInspectedSpace(null);
                   setSelectedBay(details.bayNumber);
-                  setConfirmModalVisible(true);
+                  if (driverVehicle.vehicleType === "ev") {
+                    setSheetStation(null);
+                    router.push({
+                      pathname: "/ev_charging",
+                      params: {
+                        locationId: sheetStation.id,
+                        name: sheetStation.name,
+                        bayNumber: details.bayNumber,
+                        plate: driverVehicle.plateNumber || "EV",
+                        powerKw: String(details.maxKw || 120),
+                        soc: String(driverVehicle.batteryLevelPercent || 25),
+                        isPaid: "true",
+                        billAmount: "9000",
+                        currency: "RWF",
+                      },
+                    });
+                  } else {
+                    setConfirmModalVisible(true);
+                  }
                 }}
               />
             )}
@@ -1425,7 +1469,7 @@ const EVChargers = () => {
 
                         setSheetStation(null);
                         router.push({
-                          pathname: "/charging_receipt",
+                          pathname: "/ev_charging",
                           params: {
                             locationId: sLocId,
                             chargerId: matchedCharger?.id || "",
@@ -1439,6 +1483,7 @@ const EVChargers = () => {
                             durationMinutes: "60",
                             durationSeconds: "3600",
                             billAmount: String(evBill),
+                            isPaid: "true",
                             receiptNumber: `PZ-EV-${Date.now().toString().slice(-4)}`,
                           },
                         });
