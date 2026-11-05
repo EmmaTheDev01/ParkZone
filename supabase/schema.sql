@@ -284,7 +284,8 @@ CREATE OR REPLACE VIEW public.parking_spots AS SELECT * FROM public.parking_spac
 ALTER TABLE public.parking_spaces ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone authenticated can view parking spaces" ON public.parking_spaces;
-CREATE POLICY "Anyone authenticated can view parking spaces"
+DROP POLICY IF EXISTS "Public/Authenticated users can view parking spaces" ON public.parking_spaces;
+CREATE POLICY "Public/Authenticated users can view parking spaces"
     ON public.parking_spaces FOR SELECT
     USING (true);
 
@@ -336,7 +337,8 @@ CREATE INDEX IF NOT EXISTS idx_ev_charging_operational ON public.ev_charging_poi
 ALTER TABLE public.ev_charging_points ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Anyone authenticated can view EV chargers" ON public.ev_charging_points;
-CREATE POLICY "Anyone authenticated can view EV chargers"
+DROP POLICY IF EXISTS "Public/Authenticated users can view EV chargers" ON public.ev_charging_points;
+CREATE POLICY "Public/Authenticated users can view EV chargers"
     ON public.ev_charging_points FOR SELECT
     USING (true);
 

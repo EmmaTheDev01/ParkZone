@@ -4527,13 +4527,14 @@ export default function Home() {
               </View>
 
               {(() => {
+                const selectedSpaceObj = sheetSpaces.find((s) => s.space_number === selectedSheetBay);
                 const isConfirmEv =
-                  selectedSheetZone === "Zone A" ||
-                  Boolean(selectedParkForSheet?.is_electric_station) ||
+                  selectedSpaceObj?.space_type === "ev" ||
+                  (Boolean(selectedParkForSheet?.is_electric_station) && selectedSpaceObj?.space_type !== "regular" && selectedSpaceObj?.space_type !== "handicap") ||
                   selectedSheetBay.toLowerCase().startsWith("ev");
                 const isConfirmHc =
-                  selectedSheetZone === "Zone E" ||
-                  Boolean(selectedParkForSheet?.is_handicap_facility) ||
+                  selectedSpaceObj?.space_type === "handicap" ||
+                  (Boolean(selectedParkForSheet?.is_handicap_facility) && selectedSpaceObj?.space_type !== "regular" && selectedSpaceObj?.space_type !== "ev") ||
                   selectedSheetBay.toLowerCase().startsWith("h");
                 const isEvChargingSession = isConfirmEv && isVehicleElectric;
                 const confirmFineAmount = (isConfirmEv && !isVehicleElectric) ? 5000 : (isConfirmHc && !isVehicleHandicap) ? 10000 : 0;
@@ -5858,6 +5859,8 @@ export default function Home() {
                   >
                     {selectedMapLocation.is_electric_station && isVehicleElectric
                       ? "Select Charging Spot"
+                      : selectedMapLocation.is_handicap_facility
+                      ? "Select Accessible Spot"
                       : "Select Parking Spot"}
                   </Text>
                 </TouchableOpacity>

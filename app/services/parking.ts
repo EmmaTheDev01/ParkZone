@@ -680,6 +680,51 @@ export function resolveSpaceImageUrl(
     return undefined;
 }
 
+export function parseLocationMeta(loc: any): {
+    isElectric: boolean;
+    isHandicap: boolean;
+    layoutTopology?: TopologyType;
+    facilities?: string[];
+    hourlyRate?: number;
+    dailyRate?: number;
+} {
+    let parsedMeta: any = null;
+    if (typeof loc?.description === "string" && loc.description.trim().startsWith("{")) {
+        try {
+            const parsed = JSON.parse(loc.description);
+            parsedMeta = parsed?.meta || parsed;
+        } catch {}
+    }
+
+    // Determine handicap facility:
+    // 1. Explicitly in DB column or parsed meta
+    // 2. Or location name contains "accessible" or "handicap"
+    const isHandicap = Boolean(
+        loc?.is_handicap_facility === true ||
+        parsedMeta?.is_handicap_facility === true ||
+        /\b(accessible|handicap|disabled|wheelchair)\b/i.test(loc?.name || "")
+    );
+
+    // Determine electric facility:
+    // 1. Must NOT be a handicap facility
+    // 2. Explicitly in DB column or parsed meta
+    // 3. Or location name explicitly mentions EV / Charging Hub / Supercharger
+    const isElectric = !isHandicap && Boolean(
+        loc?.is_electric_station === true ||
+        parsedMeta?.is_electric_station === true ||
+        /\b(ev|charging\s+hub|supercharger|hypercharger|electric\s+vehicle)\b/i.test(loc?.name || "")
+    );
+
+    return {
+        isElectric,
+        isHandicap,
+        layoutTopology: parsedMeta?.layout_topology,
+        facilities: Array.isArray(parsedMeta?.facilities) ? parsedMeta.facilities : undefined,
+        hourlyRate: typeof parsedMeta?.hourly_rate === "number" ? parsedMeta.hourly_rate : undefined,
+        dailyRate: typeof parsedMeta?.daily_rate === "number" ? parsedMeta.daily_rate : undefined,
+    };
+}
+
 export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
     const { data, error } = await supabase
         .from("parking_locations")
@@ -705,22 +750,14 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
     return ((data as any[]) || [])
         .filter((loc) => loc.is_active !== false && loc.status !== "inactive")
         .map((loc) => {
+        const meta = parseLocationMeta(loc);
         const locSpaces = spacesByLoc.get(loc.id) || [];
-        const isElectric = Boolean(
-            loc.is_electric_station ||
-            loc.name?.toLowerCase().includes("ev") ||
-            loc.name?.toLowerCase().includes("charging") ||
-            loc.name?.toLowerCase().includes("electric") ||
-            (loc.description || "").toLowerCase().includes("ev") ||
-            locSpaces.some((s: any) => s.space_type === "ev" || s.vehicle_type === "ev")
-        );
-        const isHandicap = Boolean(
-            loc.is_handicap_facility ||
-            loc.name?.toLowerCase().includes("accessible") ||
-            loc.name?.toLowerCase().includes("handicap") ||
-            (loc.description || "").toLowerCase().includes("handicap") ||
-            locSpaces.some((s: any) => s.space_type === "handicap")
-        );
+        const hasEvSpaces = locSpaces.some((s: any) => s.space_type === "ev" || s.vehicle_type === "ev");
+        const hasHcSpaces = locSpaces.some((s: any) => s.space_type === "handicap");
+        const allRegular = locSpaces.length > 0 && locSpaces.every((s: any) => s.space_type === "regular");
+
+        const isHandicap = !allRegular && (meta.isHandicap || (hasHcSpaces && !hasEvSpaces));
+        const isElectric = !isHandicap && !allRegular && (meta.isElectric || hasEvSpaces);
 
         const totalSpots = Number(loc.total_spots) || (locSpaces.length > 0 ? locSpaces.length : 12);
         const availableSpots =
@@ -731,11 +768,14 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
                 : totalSpots;
 
         const hourlyRate =
+            meta.hourlyRate ||
             Number(loc.hourly_rate) ||
+            Number(locSpaces.find((s: any) => s.price_per_hour_rwf || s.hourly_rate)?.price_per_hour_rwf) ||
             Number(locSpaces.find((s: any) => s.hourly_rate)?.hourly_rate) ||
-            (isElectric ? 1500 : 300);
+            (isElectric ? 1500 : isHandicap ? 300 : 500);
 
         const dailyRate =
+            meta.dailyRate ||
             Number(loc.daily_rate) ||
             Number(locSpaces.find((s: any) => s.daily_rate)?.daily_rate) ||
             (isElectric ? 10000 : 2000);
@@ -744,6 +784,8 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             loc.zone_code ||
             (isElectric ? "Zone A" : isHandicap ? "Zone E" : "Zone A");
 
+        const layoutTopology = (meta.layoutTopology || loc.layout_topology || "perpendicular") as TopologyType;
+        const facilities = meta.facilities || loc.facilities || ["CCTV", "Security Guard"];
         const dbImage = loc.image_url && loc.image_url.trim().length > 0 ? loc.image_url.trim() : undefined;
 
         return {
@@ -754,14 +796,14 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             country: loc.country || "Rwanda",
             latitude: Number(loc.latitude),
             longitude: Number(loc.longitude),
-            layout_topology: (loc.layout_topology as TopologyType) || "perpendicular",
+            layout_topology: layoutTopology,
             total_spots: totalSpots,
             available_spots: availableSpots,
             hourly_rate: hourlyRate,
             daily_rate: dailyRate,
             currency: loc.currency || "RWF",
             qr_code_identifier: loc.qr_code_identifier || loc.id,
-            facilities: loc.facilities || ["CCTV", "Security Guard"],
+            facilities: facilities,
             is_active: loc.is_active !== undefined ? loc.is_active : true,
             status: loc.status || "active",
             is_electric_station: isElectric,
@@ -821,10 +863,19 @@ export async function fetchSpotsForLocation(
         return [];
     }
 
-    const isEvStation = Boolean(locRow?.is_electric_station || (chargers.length > 0 && rawSpaces.length === 0));
-    const isHandicapFacility = Boolean(locRow?.is_handicap_facility);
-    const locationHourlyRate = Number(locRow?.hourly_rate) || 300;
-    const locationTopology: TopologyType = (locRow?.layout_topology as TopologyType) || "perpendicular";
+    const locMeta = parseLocationMeta(locRow);
+    const hasRawEv = rawSpaces.some((s) => s.space_type === "ev");
+    const hasRawHc = rawSpaces.some((s) => s.space_type === "handicap");
+    const allRawRegular = rawSpaces.length > 0 && rawSpaces.every((s) => s.space_type === "regular");
+
+    const isHandicapFacility = !allRawRegular && Boolean(
+        locMeta.isHandicap || (hasRawHc && !hasRawEv)
+    );
+    const isEvStation = !isHandicapFacility && !allRawRegular && Boolean(
+        locMeta.isElectric || hasRawEv || (chargers.length > 0 && rawSpaces.length === 0)
+    );
+    const locationHourlyRate = locMeta.hourlyRate || Number(locRow?.hourly_rate) || (isEvStation ? 1500 : isHandicapFacility ? 300 : 500);
+    const locationTopology: TopologyType = (locMeta.layoutTopology || locRow?.layout_topology || (isHandicapFacility ? "wide" : "perpendicular")) as TopologyType;
 
     const occupiedSpaceIds = new Map<string, string>();
     const occupiedBayNumbers = new Map<string, string>();
@@ -869,22 +920,24 @@ export async function fetchSpotsForLocation(
 
     // Normalize real database rows from parking_spaces
     const normalizedDbSpaces: ParkingSpace[] = rawSpaces.map((s, idx) => {
+        const isSpaceEv = s.space_type === "ev" || (isEvStation && s.space_type !== "handicap" && s.space_type !== "regular");
+        const isSpaceHc = s.space_type === "handicap" || (!isSpaceEv && isHandicapFacility && s.space_type !== "regular");
+
         const normalizedZone = STANDARD_PARKING_ZONES.includes(s.zone_code as any)
             ? s.zone_code
             : locRow?.zone_code && STANDARD_PARKING_ZONES.includes(locRow.zone_code as any)
             ? locRow.zone_code
-            : isEvStation || s.space_type === "ev"
+            : isSpaceEv
             ? "Zone A"
-            : s.space_type === "handicap"
+            : isSpaceHc
             ? "Zone E"
             : "Zone A";
 
-        const isEv = s.space_type === "ev" || isEvStation || normalizedZone === "Zone A";
         const matchingCharger =
             chargerMap.get(s.space_number) ||
-            (isEv && chargers.length > 0 ? chargers[idx % chargers.length] : undefined);
-        const wattPower = s.watt_power_kw ?? (isEv ? matchingCharger?.max_output_kw || (normalizedZone === "Zone A" ? 150 : normalizedZone === "Zone B" ? 50 : 22) : undefined);
-        const priceKwh = s.price_per_kwh_rwf ?? (isEv ? matchingCharger?.price_per_kwh : undefined);
+            (isSpaceEv && chargers.length > 0 ? chargers[idx % chargers.length] : undefined);
+        const wattPower = s.watt_power_kw ?? (isSpaceEv ? matchingCharger?.max_output_kw || (normalizedZone === "Zone A" ? 150 : normalizedZone === "Zone B" ? 50 : 22) : undefined);
+        const priceKwh = s.price_per_kwh_rwf ?? (isSpaceEv ? matchingCharger?.price_per_kwh || 250 : undefined);
 
         const spaceDbImage =
             s.image_url && s.image_url.trim().length > 0
@@ -899,29 +952,35 @@ export async function fetchSpotsForLocation(
         const effectiveOccupied = Boolean(s.is_occupied || activeTicketPlate || chargerBusy);
 
         const zoneMeta = getZoneLotMeta(normalizedZone, isEvStation);
-        const spotLabel = isEvStation || s.space_type === "ev"
+        const spotLabel = isSpaceEv
             ? wattPower
                 ? `${wattPower}kW ${wattPower >= 50 ? "DC" : "AC"}`
-                : zoneMeta.defaultSpotLabel
-            : s.space_type === "handicap"
+                : "Fast Charger"
+            : isSpaceHc
             ? "Accessible"
             : zoneMeta.defaultSpotLabel;
 
+        const spaceType: "regular" | "ev" | "handicap" =
+            isSpaceEv ? "ev" : isSpaceHc ? "handicap" : "regular";
+
+        const spotHourlyRate =
+            s.price_per_hour_rwf !== undefined && s.price_per_hour_rwf !== null
+                ? Number(s.price_per_hour_rwf)
+                : isSpaceEv
+                ? 0
+                : locationHourlyRate;
+
         return {
             ...s,
+            space_type: spaceType,
             zone_code: normalizedZone,
             image_url: spaceDbImage,
             is_occupied: effectiveOccupied,
             current_vehicle_plate: s.current_vehicle_plate || activeTicketPlate || null,
             watt_power_kw: wattPower,
-            price_per_hour_rwf:
-                s.price_per_hour_rwf !== undefined && s.price_per_hour_rwf !== null
-                    ? Number(s.price_per_hour_rwf)
-                    : isEv
-                    ? 0
-                    : locationHourlyRate,
+            price_per_hour_rwf: spotHourlyRate,
             price_per_kwh_rwf: priceKwh,
-            topology: s.topology || (s.space_type === "handicap" ? "wide" : locationTopology),
+            topology: s.topology || (isSpaceHc ? "wide" : locationTopology),
             car_color: resolveParkedCarColor(
                 `${locationId}-${normalizedZone}-${s.space_number}`,
                 s.current_vehicle_plate || activeTicketPlate || occupiedBayNumbers.get(s.space_number.toUpperCase()) || null
@@ -1002,7 +1061,7 @@ export async function fetchSpotsForLocation(
             usedNumbers.add(bayNum.toUpperCase());
 
             const spaceType: "regular" | "ev" | "handicap" =
-                isEvStation || zn === "Zone A"
+                isEvStation
                     ? "ev"
                     : isHandicapFacility || zn === "Zone E"
                     ? "handicap"
@@ -1603,17 +1662,15 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
 
     const stations: DbEvStationItem[] = [];
     for (const loc of locs) {
+        const meta = parseLocationMeta(loc);
         const locSpaces = spacesByLoc.get(loc.id) || [];
         const evSpaces = locSpaces.filter((s: any) => s.space_type === "ev" || s.vehicle_type === "ev");
 
         const isEvStation = Boolean(
-            loc.is_electric_station ||
-            loc.name?.toLowerCase().includes("ev") ||
-            loc.name?.toLowerCase().includes("charging") ||
-            loc.name?.toLowerCase().includes("electric") ||
-            (loc.description || "").toLowerCase().includes("ev") ||
-            evSpaces.length > 0 ||
-            chargersByLoc.has(loc.id)
+            !meta.isHandicap &&
+            (chargersByLoc.has(loc.id) ||
+             evSpaces.length > 0 ||
+             meta.isElectric)
         );
 
         if (!isEvStation) continue;
