@@ -1958,6 +1958,16 @@ export default function Home() {
                 {/* Parking Layout 2-Columns */}
                 {loadingSpaces ? (
                   <BayGridSkeleton count={8} />
+                ) : visibleSpaces.length === 0 ? (
+                  <View style={{ paddingVertical: 48, paddingHorizontal: 20, alignItems: "center" }}>
+                    <Ionicons name="grid-outline" size={32} color={theme.textSecondary} />
+                    <Text style={{ fontSize: 14, fontWeight: "600", color: theme.text, marginTop: 10 }}>
+                      No Parking Bays Registered
+                    </Text>
+                    <Text style={{ fontSize: 12, color: theme.textSecondary, textAlign: "center", marginTop: 4 }}>
+                      This facility currently has 0 bays in the database.
+                    </Text>
+                  </View>
                 ) : (
                 <View style={styles.bayLayoutTwoCols}>
                   {/* Left Column */}

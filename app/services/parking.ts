@@ -854,11 +854,18 @@ export async function fetchSpotsForLocation(
             .select("plate_number, color, user_id, make_model"),
     ]);
 
-    if (spacesRes.error) {
-        console.warn("fetchSpotsForLocation error:", spacesRes.error);
+    let rawSpaces = (spacesRes.data || []) as ParkingSpace[];
+    if (spacesRes.error || rawSpaces.length === 0) {
+        const retryRes = await supabase
+            .from("parking_spaces")
+            .select("id, location_id, space_number, zone_code, space_type, price_per_hour_rwf, image_url, is_occupied, current_vehicle_plate, qr_code_token, created_at, updated_at")
+            .eq("location_id", locationId)
+            .order("space_number", { ascending: true });
+        if (retryRes.data && retryRes.data.length > 0) {
+            rawSpaces = retryRes.data as any;
+        }
     }
 
-    const rawSpaces = (spacesRes.data || []) as ParkingSpace[];
     if (!locRow && rawSpaces.length === 0 && chargers.length === 0) {
         return [];
     }
@@ -989,179 +996,11 @@ export async function fetchSpotsForLocation(
         };
     });
 
-    // If real database spaces exist in parking_spaces, return them directly!
-    if (normalizedDbSpaces.length > 0) {
-        if (zoneCode && zoneCode !== "All Zones") {
-            const inRequestedZone = normalizedDbSpaces.filter((s) => s.zone_code === zoneCode);
-            if (inRequestedZone.length > 0) {
-                return inRequestedZone;
-            }
-        }
-        return normalizedDbSpaces;
-    }
-
-    // Calculate database occupancy ratio from parking_locations (total_spots vs available_spots)
-    const totalLocSpots = Number(locRow?.total_spots) || 0;
-    const availLocSpots =
-        locRow?.available_spots !== undefined && locRow?.available_spots !== null
-            ? Number(locRow.available_spots)
-            : totalLocSpots;
-    // Occupancy is derived strictly from parking_locations.total_spots / available_spots (0 when lot is empty)
-    const dbOccupancyRatio =
-        totalLocSpots > 0 && availLocSpots < totalLocSpots
-            ? Math.min(1, Math.max(0, (totalLocSpots - availLocSpots) / totalLocSpots))
-            : 0;
-
-    const allZoneSpaces: ParkingSpace[] = [];
-    const BAYS_PER_ZONE = 12;
-
-    for (const zn of STANDARD_PARKING_ZONES) {
-        const zoneMeta = getZoneLotMeta(zn, isEvStation);
-        const existingInZone = normalizedDbSpaces.filter((s) => s.zone_code === zn);
-        const usedNumbers = new Set(existingInZone.map((s) => s.space_number.toUpperCase()));
-        const zoneList: ParkingSpace[] = [...existingInZone];
-
-        // If EV station has real chargers in ev_charging_points and Zone A has no DB spaces yet, seed real charger bays first
-        if (zn === "Zone A" && existingInZone.length === 0 && chargers.length > 0) {
-            chargers.slice(0, BAYS_PER_ZONE).forEach((ch, cIdx) => {
-                const bayNum = ch.station_identifier || String(zoneMeta.bayBase + cIdx);
-                if (usedNumbers.has(bayNum.toUpperCase())) return;
-                usedNumbers.add(bayNum.toUpperCase());
-                const busy = ch.status !== "available" || occupiedBayNumbers.has(bayNum.toUpperCase());
-                zoneList.push({
-                    id: `lot-${locationId}-${zn}-${bayNum}`,
-                    location_id: locationId,
-                    space_number: bayNum,
-                    zone_code: zn,
-                    space_type: "ev",
-                    image_url:
-                        ch.image_url?.trim() || locRow?.image_url?.trim() || undefined,
-                    is_occupied: busy,
-                    current_vehicle_plate: occupiedBayNumbers.get(bayNum.toUpperCase()) || null,
-                    qr_code_token: `QR-${bayNum}`,
-                    watt_power_kw: ch.max_output_kw || 120,
-                    price_per_hour_rwf: 0,
-                    price_per_kwh_rwf: ch.price_per_kwh || 250,
-                    topology: locationTopology,
-                    car_color: resolveParkedCarColor(
-                        `${locationId}-${zn}-${bayNum}`,
-                        occupiedBayNumbers.get(bayNum.toUpperCase()) || null
-                    ),
-                    spot_label: `${ch.max_output_kw || 120}kW ${(ch.max_output_kw || 120) >= 50 ? "DC" : "AC"}`,
-                });
-            });
-        }
-
-        // Complete the 2-column 12-bay lot layout for this zone
-        let candidateOffset = 0;
-        while (zoneList.length < BAYS_PER_ZONE) {
-            const bayNum = String(zoneMeta.bayBase + candidateOffset);
-            candidateOffset += 1;
-            if (usedNumbers.has(bayNum.toUpperCase())) continue;
-            usedNumbers.add(bayNum.toUpperCase());
-
-            const spaceType: "regular" | "ev" | "handicap" =
-                isEvStation
-                    ? "ev"
-                    : isHandicapFacility || zn === "Zone E"
-                    ? "handicap"
-                    : "regular";
-
-            const fallbackCharger =
-                spaceType === "ev" && chargers.length > 0
-                    ? chargers[zoneList.length % chargers.length]
-                    : undefined;
-            const kw =
-                spaceType === "ev"
-                    ? fallbackCharger?.max_output_kw || (zn === "Zone A" ? 150 : zn === "Zone B" ? 50 : 22)
-                    : undefined;
-
-            const activePlate = occupiedBayNumbers.get(bayNum.toUpperCase()) || null;
-            const spotLabel =
-                isEvStation || spaceType === "ev"
-                    ? kw
-                        ? `${kw}kW ${kw >= 50 ? "DC" : "AC"}`
-                        : zoneMeta.defaultSpotLabel
-                    : spaceType === "handicap"
-                    ? "Accessible"
-                    : zoneMeta.defaultSpotLabel;
-
-            zoneList.push({
-                id: `lot-${locationId}-${zn}-${bayNum}`,
-                location_id: locationId,
-                space_number: bayNum,
-                zone_code: zn,
-                space_type: spaceType,
-                image_url: locRow?.image_url?.trim() || undefined,
-                is_occupied: Boolean(activePlate),
-                current_vehicle_plate: activePlate,
-                qr_code_token: `QR-${bayNum}`,
-                watt_power_kw: kw,
-                price_per_hour_rwf: spaceType === "ev" ? 0 : locationHourlyRate,
-                price_per_kwh_rwf: fallbackCharger?.price_per_kwh,
-                topology: spaceType === "handicap" ? "wide" : locationTopology,
-                car_color: resolveParkedCarColor(`${locationId}-${zn}-${bayNum}`, activePlate),
-                spot_label: spotLabel,
-            });
-        }
-
-        // Ensure parked cars are realistically distributed in both columns when occupancy > current occupied rows
-        const targetOccupied = Math.min(
-            zoneList.length,
-            Math.round(zoneList.length * dbOccupancyRatio)
-        );
-        let currentOccupied = zoneList.filter((s) => s.is_occupied).length;
-
-        if (currentOccupied < targetOccupied) {
-            // Deterministic hash per location + zone so car positions look natural across Left & Right columns
-            let seedHash = 0;
-            const seedStr = `${locationId}-${zn}`;
-            for (let i = 0; i < seedStr.length; i += 1) {
-                seedHash = (seedHash * 33 + seedStr.charCodeAt(i)) | 0;
-            }
-            const mid = Math.ceil(zoneList.length / 2);
-            // Interleave candidates from Left Column and Right Column, preferring non-UUID padded bays first so real DB UUID bays stay selectable
-            const candidateIndices: number[] = [];
-            for (let offset = 0; offset < mid; offset += 1) {
-                const leftIdx = (offset * 2 + 1 + Math.abs(seedHash)) % mid;
-                const rightIdx = mid + ((offset * 2 + Math.abs(seedHash >> 3)) % (zoneList.length - mid));
-                if (!candidateIndices.includes(leftIdx)) candidateIndices.push(leftIdx);
-                if (rightIdx < zoneList.length && !candidateIndices.includes(rightIdx)) {
-                    candidateIndices.push(rightIdx);
-                }
-            }
-            const sortedCandidates = [
-                ...candidateIndices.filter((idx) => !isValidUuid(zoneList[idx]?.id)),
-                ...candidateIndices.filter((idx) => isValidUuid(zoneList[idx]?.id)),
-            ];
-
-            for (const idx of sortedCandidates) {
-                if (currentOccupied >= targetOccupied) break;
-                if (zoneList[idx] && !zoneList[idx].is_occupied) {
-                    const candidateSpace = zoneList[idx];
-                    zoneList[idx] = {
-                        ...candidateSpace,
-                        is_occupied: true,
-                        car_color:
-                            candidateSpace.car_color ||
-                            resolveParkedCarColor(
-                                `${locationId}-${zn}-${candidateSpace.space_number}`,
-                                candidateSpace.current_vehicle_plate
-                            ),
-                    };
-                    currentOccupied += 1;
-                }
-            }
-        }
-
-        allZoneSpaces.push(...zoneList);
-    }
-
+    // Strictly return only real database added lots per parking space (no synthetic padding)
     if (zoneCode && zoneCode !== "All Zones") {
-        return allZoneSpaces.filter((s) => s.zone_code === zoneCode);
+        return normalizedDbSpaces.filter((s) => s.zone_code === zoneCode);
     }
-
-    return allZoneSpaces;
+    return normalizedDbSpaces;
 }
 
 let realtimeSubscriptionSeq = 0;
