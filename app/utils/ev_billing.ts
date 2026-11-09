@@ -1,6 +1,17 @@
 
 
-// Definiton of EV Billing Structure
+
+export type EvTariff = {
+
+    tier: string;
+    min_kwh: number;
+    total_amount: number;
+    penalties_fee: number;
+    overstay_minutes: number;
+}
+
+
+
 
 type EvBilling = {
     energyCost: number;
@@ -137,8 +148,6 @@ const calculateParkingSpendings = (parkingFee: number, period: 'daily' | 'weekly
 
 }
 
-
-
 // Spending alerts based on defined limits
 
 type AlertPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
@@ -158,6 +167,49 @@ const getAlertLevel = (spent: number, limit: number): AlertLevel => {
     if (spent >= limit * WARNING_RATIO) return 'warning';
     return 'ok';
 };
+
+
+const calculateOverstay = ( startCharging: Date, endCharging: Date): number => {
+ // PENALTIES FEE
+
+
+ const overstayMinutes = Math.ceil((endCharging.getTime() - startCharging.getTime()) / (1000 * 60));
+
+
+ try {
+
+    if (Number.isNaN(overstayMinutes) || overstayMinutes < 0) {
+        throw new Error('Invalid overstay duration');
+    }
+ } catch (error) {
+    throw new Error('Error calculating overstay duration: ' + (error as Error).message);
+ }
+
+
+
+
+ const OVERSTAY_LIMITS = {
+     SMALL: 15,
+     MEDIUM: 30,
+ };
+
+ const PENALTIES = {
+     SMALL: 50,
+     MEDIUM: 100,
+     LARGE: 200,
+ };
+
+
+
+         if (overstayMinutes <= 0) return 0;
+         if (overstayMinutes <= OVERSTAY_LIMITS.SMALL) return PENALTIES.SMALL;
+         if (overstayMinutes <= OVERSTAY_LIMITS.MEDIUM) return PENALTIES.MEDIUM;
+         if (overstayMinutes > OVERSTAY_LIMITS.MEDIUM) return PENALTIES.LARGE;
+
+         return 0;
+
+}
+
 
 
 
@@ -181,7 +233,7 @@ const spendingAlerts = (energySpendings: number, parkingSpendings: number, perio
 };
 
 
-export { calculateEvBilling, calculateEnergySpendings, calculateParkingSpendings, spendingAlerts };
+export { calculateEvBilling, calculateEnergySpendings, calculateParkingSpendings, spendingAlerts , calculateOverstay };
 
 export default function () {
     return null;
