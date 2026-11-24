@@ -18,6 +18,11 @@ const { width } = Dimensions.get("window");
 const cardWidth = Math.min(width * 0.78, 310);
 const cardHeight = 230;
 
+// Bundled offline welcome hero images
+const HERO_TOP_IMG = require("../assets/welcome/hero_top.jpg");
+const HERO_MID_IMG = require("../assets/welcome/hero_mid.jpg");
+const HERO_BACK_IMG = require("../assets/welcome/hero_back.jpg");
+
 export default function WelcomePage() {
   const router = useRouter();
   const theme = useTheme();
@@ -81,13 +86,11 @@ export default function WelcomePage() {
               },
             ]}
           >
-            {backLocation?.image_url ? (
-              <Image
-                source={{ uri: backLocation.image_url }}
-                style={styles.cardCoverImage}
-                resizeMode="cover"
-              />
-            ) : null}
+            <Image
+              source={backLocation?.image_url ? { uri: backLocation.image_url } : HERO_BACK_IMG}
+              style={styles.cardCoverImage}
+              resizeMode="cover"
+            />
             <View style={styles.imageDarkGradient} />
           </View>
 
@@ -104,17 +107,11 @@ export default function WelcomePage() {
             ]}
           >
             <View style={[styles.cardImageContainer, { backgroundColor: theme.surfaceMuted }]}>
-              {midLocation?.image_url ? (
-                <Image
-                  source={{ uri: midLocation.image_url }}
-                  style={styles.cardCoverImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.cardCoverImage, { alignItems: "center", justifyContent: "center" }]}>
-                  <Ionicons name="car-sport-outline" size={32} color={theme.textMuted} />
-                </View>
-              )}
+              <Image
+                source={midLocation?.image_url ? { uri: midLocation.image_url } : HERO_MID_IMG}
+                style={styles.cardCoverImage}
+                resizeMode="cover"
+              />
               <View style={styles.imageDarkGradient} />
 
               {/* Overlaid Glass Chip */}
@@ -175,17 +172,11 @@ export default function WelcomePage() {
             ]}
           >
             <View style={[styles.topCardImageContainer, { backgroundColor: theme.surfaceMuted }]}>
-              {topLocation?.image_url ? (
-                <Image
-                  source={{ uri: topLocation.image_url }}
-                  style={styles.cardCoverImage}
-                  resizeMode="cover"
-                />
-              ) : (
-                <View style={[styles.cardCoverImage, { alignItems: "center", justifyContent: "center" }]}>
-                  <Ionicons name="flash-outline" size={36} color={theme.textMuted} />
-                </View>
-              )}
+              <Image
+                source={topLocation?.image_url ? { uri: topLocation.image_url } : HERO_TOP_IMG}
+                style={styles.cardCoverImage}
+                resizeMode="cover"
+              />
               <View style={styles.imageDarkGradient} />
 
               {/* Overlaid Frosted Glass Status Badge */}
