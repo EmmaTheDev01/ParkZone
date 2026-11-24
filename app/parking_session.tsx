@@ -20,7 +20,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useTheme } from "../hooks/useTheme";
 import { supabase } from "./lib/supabase";
 import { completeParkingSession, fetchActiveParkingTicket } from "./services/parking";
-import { initiateMobilePayment } from "./services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "./services/mobilePayment";
 import { VoiceGuidance } from "./services/voiceGuidance";
 import ParkingPaymentQrModal from "../components/ParkingPaymentQrModal";
 
@@ -317,8 +317,9 @@ export default function ParkingSessionScreen() {
     const derivedRate =
       session.hourlyRate ??
       (session.cost && durationHours > 0 ? Math.round(session.cost / durationHours) : 300);
+    const { netAmount: netExtensionRate } = applyAmountDeduction(derivedRate);
     const newHours = durationHours + 1;
-    const newTotal = (session.cost || 0) + derivedRate;
+    const newTotal = (session.cost || 0) + netExtensionRate;
     setSession((prev) => ({
       ...prev,
       durationHours: newHours,
@@ -327,8 +328,8 @@ export default function ParkingSessionScreen() {
     }));
 
     // Trigger mobile payment dial code in background for extension
-    if (derivedRate > 0) {
-      initiateMobilePayment(derivedRate).catch(() => {});
+    if (netExtensionRate > 0) {
+      initiateMobilePayment(netExtensionRate, undefined, { alreadyDeducted: true }).catch(() => {});
     }
 
     if (session.id) {

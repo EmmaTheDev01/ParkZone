@@ -1,6 +1,7 @@
 import { supabase } from "../lib/supabase";
 import { hashLicensePlate, maskLicensePlate } from "../lib/crypto";
 import { ensureUserProfile } from "./auth";
+import { applyAmountDeduction } from "./mobilePayment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { broadcastVehicleChange, mapDbRowToSpecs, reloadDriverVehicle } from "../../hooks/useDriverVehicle";
 
@@ -1397,11 +1398,10 @@ export async function startParkingSession(params: {
     const exactHours = params.durationHours || 1;
     const rawHourlyTotal = hourlyRate * exactHours;
     const reachedDailyCap = dailyCap > 0 && rawHourlyTotal >= dailyCap;
+    const grossTotal = reachedDailyCap ? dailyCap : rawHourlyTotal;
     const exactTotal = params.totalAmount !== undefined
         ? params.totalAmount
-        : reachedDailyCap
-        ? dailyCap
-        : rawHourlyTotal;
+        : applyAmountDeduction(grossTotal).netAmount;
     const rateApplied = reachedDailyCap ? "daily" : "hourly";
     const paymentStatus = params.paymentStatus || "paid";
 

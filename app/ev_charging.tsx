@@ -24,7 +24,7 @@ import {
   completeEvChargingSession,
   startEvChargingSession,
 } from "./services/parking";
-import { initiateMobilePayment } from "./services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "./services/mobilePayment";
 
 const { width } = Dimensions.get("window");
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -55,8 +55,10 @@ export default function EvChargingScreen() {
   const [hasNotifiedCompletion, setHasNotifiedCompletion] = useState<boolean>(false);
   const [chargingSessionId, setChargingSessionId] = useState<string>("");
 
-  // Initial bill is 9,000 RWF by default as soon as the user starts charging
-  const initialBillAmount = params.billAmount ? Number(params.billAmount) : 9000;
+  // Initial bill defaults to 9,000 RWF with 18% deduction applied
+  const initialBillAmount = params.billAmount
+    ? Number(params.billAmount)
+    : applyAmountDeduction(9000).netAmount;
   const [chargingBill] = useState<number>(initialBillAmount);
 
   // Pre-payment verification: confirm driver has paid before charging starts
@@ -354,7 +356,7 @@ export default function EvChargingScreen() {
               style={[styles.payNowRequiredBtn, { backgroundColor: theme.primaryBtnBg }]}
               onPress={async () => {
                 setIsProcessingPayment(true);
-                await initiateMobilePayment(chargingBill);
+                await initiateMobilePayment(chargingBill, undefined, { alreadyDeducted: true });
                 setPaymentVerified(true);
                 setIsPlaying(true);
                 setIsProcessingPayment(false);

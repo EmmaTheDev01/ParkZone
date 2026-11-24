@@ -25,7 +25,7 @@ import {
   fetchWalletBalance,
   updateWalletBalance,
 } from "./services/parking";
-import { initiateMobilePayment } from "./services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "./services/mobilePayment";
 import ParkingPaymentQrModal from "../components/ParkingPaymentQrModal";
 
 const { width } = Dimensions.get("window");
@@ -430,13 +430,15 @@ export default function TransactionDetailsScreen() {
     setRefreshing(false);
   };
 
-  // Computations
+  // Computations (with standard 18% deduction)
   const isEvSession = transaction.isEv;
   const isPayable = transaction.paymentStatus !== "paid" || transaction.isOverdue || transaction.isPostpaidEv;
   const subtotal = transaction.cost;
   const fine = transaction.violationFine || 0;
   const discountAmount = appliedVoucher ? Math.round((subtotal * appliedVoucher.discountPercent) / 100) : 0;
-  const totalAmount = isPayable ? Math.max(0, subtotal + fine - discountAmount) : 0;
+  const grossPayable = Math.max(0, subtotal + fine - discountAmount);
+  const { deductionAmount: standardDeductionAmount, netAmount: netPayableAmount } = applyAmountDeduction(grossPayable);
+  const totalAmount = isPayable ? netPayableAmount : 0;
 
   // Timestamps
   const entryMs = useMemo(() => {
@@ -485,7 +487,7 @@ export default function TransactionDetailsScreen() {
 
     try {
       // 1. Run mobile payment dial code in background: *182*1*1*0790889899*amount#
-      await initiateMobilePayment(totalAmount);
+      await initiateMobilePayment(totalAmount, undefined, { alreadyDeducted: true });
 
       // 2. Update database record in real-time according to source table
       if (transaction.sourceTable === "parking_tickets") {
@@ -841,6 +843,16 @@ export default function TransactionDetailsScreen() {
           },
         ]}
       >
+        {isPayable && standardDeductionAmount > 0 && (
+          <View style={[styles.totalRow, { marginBottom: 4 }]}>
+            <Text style={[styles.totalLabel, { color: theme.textSecondary, fontSize: 12 }]}>
+              18% Deduction
+            </Text>
+            <Text style={[styles.totalLabel, { color: theme.evGreen, fontSize: 12, fontWeight: "600" }]}>
+              -{formatMoney(standardDeductionAmount)}
+            </Text>
+          </View>
+        )}
         <View style={styles.totalRow}>
           <Text style={[styles.totalLabel, { color: theme.textSecondary }]}>Total Due</Text>
           <Text style={[styles.totalAmountText, { color: theme.text }]}>

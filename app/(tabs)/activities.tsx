@@ -40,7 +40,7 @@ import {
   fetchUserVehicles,
   ParkingHistoryRecord,
 } from "../services/parking";
-import { initiateMobilePayment } from "../services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "../services/mobilePayment";
 import ParkingPaymentQrModal from "../../components/ParkingPaymentQrModal";
 
 const { width } = Dimensions.get("window");
@@ -458,12 +458,13 @@ const Activities = () => {
   const handleExtendTime = async () => {
     if (!activeTicket) return;
     const addedRate = activeTicket.hourlyRate || 300;
+    const { netAmount: netAddedRate } = applyAmountDeduction(addedRate);
     const newHours = (activeTicket.durationHours || 1) + 1;
-    const newTotal = newHours * addedRate;
+    const newTotal = applyAmountDeduction(newHours * addedRate).netAmount;
 
     try {
       // Trigger mobile payment dial code in background for extension
-      initiateMobilePayment(addedRate).catch(() => {});
+      initiateMobilePayment(netAddedRate, undefined, { alreadyDeducted: true }).catch(() => {});
 
       const { error } = await supabase
         .from("parking_tickets")

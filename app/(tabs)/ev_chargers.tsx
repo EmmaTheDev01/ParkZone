@@ -51,7 +51,7 @@ import {
 } from "../services/evCharging";
 import { MAP_STYLE_LIGHT, MAP_STYLE_DARK } from "../../constants/mapStyles";
 import { fetchRealRoadRoute, LatLng } from "../services/roadRouting";
-import { initiateMobilePayment } from "../services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "../services/mobilePayment";
 
 const { width } = Dimensions.get("window");
 
@@ -1487,10 +1487,10 @@ const EVChargers = () => {
 
                         setConfirmModalVisible(false);
                         const maxKw = matchedCharger?.max_output_kw || 120;
-                        const evBill = 9000;
+                        const { netAmount: evBill } = applyAmountDeduction(9000);
 
                         // Automatically initiate payment in background
-                        initiateMobilePayment(evBill).catch(() => {});
+                        initiateMobilePayment(evBill, undefined, { alreadyDeducted: true }).catch(() => {});
 
                         setSheetStation(null);
                         router.push({

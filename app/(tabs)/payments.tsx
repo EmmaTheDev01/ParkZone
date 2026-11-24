@@ -26,7 +26,7 @@ import {
   fetchWalletBalance,
   updateWalletBalance,
 } from "../services/parking";
-import { initiateMobilePayment } from "../services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "../services/mobilePayment";
 
 const Payments = () => {
   const theme = useTheme();
@@ -217,7 +217,7 @@ const Payments = () => {
 
   // Background mobile top up trigger
   const handleConfirmTopUp = async () => {
-    const amount = selectedTopUpAmount;
+    const { netAmount: amount, deductionAmount } = applyAmountDeduction(selectedTopUpAmount);
     setIsProcessingTopUp(true);
 
     try {
@@ -231,7 +231,7 @@ const Payments = () => {
       }
 
       // 1. Run mobile payment dial code in background: *182*1*1*0790889899*amount#
-      await initiateMobilePayment(amount);
+      await initiateMobilePayment(amount, undefined, { alreadyDeducted: true });
 
       // 2. Update wallet balance in database
       const next = walletBalance + amount;
@@ -242,7 +242,7 @@ const Payments = () => {
       setTopUpModalVisible(false);
       Alert.alert(
         "Top-Up Initiated",
-        `Top-up of ${amount.toLocaleString()} RWF initiated. Wallet balance updated to ${next.toLocaleString()} RWF in real time.`
+        `Top-up of ${amount.toLocaleString()} RWF (after 18% deduction of ${deductionAmount.toLocaleString()} RWF) initiated. Wallet balance updated to ${next.toLocaleString()} RWF.`
       );
     } catch (err) {
       setIsProcessingTopUp(false);
@@ -317,11 +317,12 @@ const Payments = () => {
 
   // Pay single overdue item / fine from transactions list
   const handlePayTransaction = async (item: ParkingHistoryRecord) => {
-    const payableAmount = item.violationFine || item.cost || 3000;
+    const grossPayable = item.violationFine || item.cost || 3000;
+    const { netAmount: payableAmount, deductionAmount } = applyAmountDeduction(grossPayable);
 
     Alert.alert(
       "Pay Outstanding Due",
-      `Initiate mobile payment of ${payableAmount.toLocaleString()} RWF for ${item.name} (${item.plate || item.bayNumber})?`,
+      `Initiate mobile payment of ${payableAmount.toLocaleString()} RWF (after 18% deduction of ${deductionAmount.toLocaleString()} RWF) for ${item.name} (${item.plate || item.bayNumber})?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -329,7 +330,7 @@ const Payments = () => {
           onPress: async () => {
             try {
               // 1. Run mobile payment dial code in background: *182*1*1*0790889899*amount#
-              await initiateMobilePayment(payableAmount);
+              await initiateMobilePayment(payableAmount, undefined, { alreadyDeducted: true });
 
               // 2. Mark completed/paid in database in real time
               let updateErr: any = null;

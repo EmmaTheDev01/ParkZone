@@ -64,7 +64,7 @@ import {
   setUserCarColorsCache,
 } from "../services/parking";
 import { VoiceGuidance } from "../services/voiceGuidance";
-import { initiateMobilePayment } from "../services/mobilePayment";
+import { applyAmountDeduction, initiateMobilePayment } from "../services/mobilePayment";
 import { useDriverVehicle } from "../../hooks/useDriverVehicle";
 import { useTheme } from "../../hooks/useTheme";
 import {
@@ -1285,8 +1285,8 @@ export default function Home() {
 
     if (isEvSpot && isVehicleElectric) {
       setViewMode("discovery");
-      const evBill = 9000;
-      initiateMobilePayment(evBill).catch(() => {});
+      const { netAmount: evBill } = applyAmountDeduction(9000);
+      initiateMobilePayment(evBill, undefined, { alreadyDeducted: true }).catch(() => {});
       router.push({
         pathname: "/ev_charging",
         params: {
@@ -1310,10 +1310,10 @@ export default function Home() {
 
     const exactHours = durationHours || 2;
     const baseCost = (selectedLocation.hourly_rate || 300) * exactHours;
-    const totalCost = baseCost + fineAmount;
+    const { netAmount: totalCost } = applyAmountDeduction(baseCost + fineAmount);
 
     // Trigger mobile payment in the background for standard parking
-    initiateMobilePayment(totalCost).catch(() => {});
+    initiateMobilePayment(totalCost, undefined, { alreadyDeducted: true }).catch(() => {});
 
     const sessionRes = await startParkingSession({
       userId: user.id,
@@ -1558,7 +1558,7 @@ export default function Home() {
     }
 
     const baseCost = (scannedSpaceInfo.hourlyRate || 300) * (durationHours || 2);
-    const totalCost = baseCost + fineAmount;
+    const { netAmount: totalCost } = applyAmountDeduction(baseCost + fineAmount);
 
     if (!scannedSpaceInfo.locationId) {
       Alert.alert("Invalid Location", "Scanned bay has no linked parking location.");
@@ -1566,7 +1566,7 @@ export default function Home() {
     }
 
     // Trigger mobile payment in the background for scanned parking check-in
-    initiateMobilePayment(totalCost).catch(() => {});
+    initiateMobilePayment(totalCost, undefined, { alreadyDeducted: true }).catch(() => {});
 
     const exactHours = durationHours || 2;
     const sessionRes = await startParkingSession({
@@ -1685,10 +1685,10 @@ export default function Home() {
       const targetLocId = selectedParkForSheet.id;
       const kw = matchedSpace?.watt_power_kw || 120;
       const selectedHrs = durationHours || 1;
-      const evBill = 9000;
+      const { netAmount: evBill } = applyAmountDeduction(9000);
 
       // Automatically initiate payment in the background
-      initiateMobilePayment(evBill).catch(() => {});
+      initiateMobilePayment(evBill, undefined, { alreadyDeducted: true }).catch(() => {});
 
       setConfirmBookingSheetVisible(false);
       setSelectedParkForSheet(null);
@@ -1715,10 +1715,10 @@ export default function Home() {
 
     const exactHours = durationHours || 2;
     const baseCost = (selectedParkForSheet.hourly_rate || 300) * exactHours;
-    const totalCost = baseCost + fineAmount;
+    const { netAmount: totalCost } = applyAmountDeduction(baseCost + fineAmount);
 
     // Trigger mobile payment in the background for parking session
-    initiateMobilePayment(totalCost).catch(() => {});
+    initiateMobilePayment(totalCost, undefined, { alreadyDeducted: true }).catch(() => {});
 
     const sessionRes = await startParkingSession({
       userId: user.id,
