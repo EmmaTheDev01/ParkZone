@@ -153,7 +153,6 @@ export interface SerialChannel {
     writableWithoutResponse: boolean;
 }
 
-
 export const findSerialChannel = async (deviceId: string): Promise<SerialChannel> => {
     const ble = requireManager();
     for (const service of await ble.servicesForDevice(deviceId)) {
@@ -198,7 +197,6 @@ export const writeText = async (deviceId: string, channel: SerialChannel, text: 
         );
     }
 };
-
 
 export const monitorText = (
     deviceId: string,

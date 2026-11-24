@@ -1,35 +1,24 @@
 
-
-
 export type EvTariff = {
-
     tier: string;
     min_kwh: number;
     total_amount: number;
     penalties_fee: number;
     overstay_minutes: number;
-}
-
-
-
+};
 
 type EvBilling = {
     energyCost: number;
     taxAmount: number;
-
     taxRate: number;
     ratePerKwh: number;
     parkingFee: number;
     totalCost: number;
     currency: string;
- 
-}
+};
 
 
-// Function for doing the calculation of the EV Billing
-
-
-const  calculateEvBilling = (taxRate: number, ratePerKwh: number, parkingFee: number, kwhUsed: number, currency: string): EvBilling => {
+const calculateEvBilling = (taxRate: number, ratePerKwh: number, parkingFee: number, kwhUsed: number, currency: string): EvBilling => {
 
     const numericInputs = { taxRate, ratePerKwh, parkingFee, kwhUsed };
 
@@ -42,9 +31,6 @@ const  calculateEvBilling = (taxRate: number, ratePerKwh: number, parkingFee: nu
     if (typeof currency !== 'string' || !currency.trim()) {
         throw new Error(`Invalid input for currency: ${currency}`);
     }
-
-    // destroying negative values we wants positive values only
-
 
     if (taxRate < 0 || taxRate > 100) {
         throw new Error(`Invalid input for taxRate: ${taxRate} must be between 0 and 100`);
@@ -74,61 +60,39 @@ const  calculateEvBilling = (taxRate: number, ratePerKwh: number, parkingFee: nu
     const roundedParkingFee = roundValues(parkingFee);
     const roundedTotalCost = roundValues(roundedEnergyCost + roundedTaxAmount + roundedParkingFee);
 
-
-    
-
     return {
-        
         taxAmount: roundedTaxAmount,
         totalCost: roundedTotalCost,
         currency,
         energyCost: roundedEnergyCost,
         parkingFee: roundedParkingFee,
-        taxRate: taxRate,
-        ratePerKwh: ratePerKwh,
+        taxRate,
+        ratePerKwh,
     };
+};
 
 
-    };
-
-
-
-
-
-
-
-    
-/// Logic for calculation the spendings in this section
 
 
 const calculateEnergySpendings = (ratePerKwh: number, kwhUsed: number, period: 'daily' | 'weekly' | 'monthly' | 'yearly'): number => {
-
-    switch(period){
+    switch (period) {
         case 'daily':
             return ratePerKwh * kwhUsed;
         case 'weekly':
             return ratePerKwh * kwhUsed * 7;
         case 'monthly':
             return ratePerKwh * kwhUsed * 30;
-        
         case 'yearly':
             return ratePerKwh * kwhUsed * 365;
         default:
             throw new Error('Invalid period. Please try again later');
     }
-}
-
-
-
-
+};
 
 
 
 const calculateParkingSpendings = (parkingFee: number, period: 'daily' | 'weekly' | 'monthly' | 'yearly'): number => {
-
-
-    switch(period){
-
+    switch (period) {
         case 'daily':
             return parkingFee;
         case 'weekly':
@@ -139,11 +103,8 @@ const calculateParkingSpendings = (parkingFee: number, period: 'daily' | 'weekly
             return parkingFee * 365;
         default:
             throw new Error('Invalid period. Please try again later');
-
-
     }
-
-}
+};
 
 // Spending alerts based on defined limits
 
@@ -166,51 +127,37 @@ const getAlertLevel = (spent: number, limit: number): AlertLevel => {
 };
 
 
-const calculateOverstay = ( startCharging: Date, endCharging: Date): number => {
- // PENALTIES FEE
+const calculateOverstay = (startCharging: Date, endCharging: Date): number => {
+    const overstayMinutes = Math.ceil((endCharging.getTime() - startCharging.getTime()) / (1000 * 60));
 
-
- const overstayMinutes = Math.ceil((endCharging.getTime() - startCharging.getTime()) / (1000 * 60));
-
-
- try {
-
-    if (Number.isNaN(overstayMinutes) || overstayMinutes < 0) {
-        throw new Error('Invalid overstay duration');
+    try {
+        if (Number.isNaN(overstayMinutes) || overstayMinutes < 0) {
+            throw new Error('Invalid overstay duration');
+        }
+    } catch (error) {
+        throw new Error('Error calculating overstay duration: ' + (error as Error).message);
     }
- } catch (error) {
-    throw new Error('Error calculating overstay duration: ' + (error as Error).message);
- }
+
+    const OVERSTAY_LIMITS = {
+        SMALL: 15,
+        MEDIUM: 30,
+    };
+
+    const PENALTIES = {
+        SMALL: 50,
+        MEDIUM: 100,
+        LARGE: 200,
+    };
+
+    if (overstayMinutes <= 0) return 0;
+    if (overstayMinutes <= OVERSTAY_LIMITS.SMALL) return PENALTIES.SMALL;
+    if (overstayMinutes <= OVERSTAY_LIMITS.MEDIUM) return PENALTIES.MEDIUM;
+    if (overstayMinutes > OVERSTAY_LIMITS.MEDIUM) return PENALTIES.LARGE;
+
+    return 0;
+};
 
 
-
-
- const OVERSTAY_LIMITS = {
-     SMALL: 15,
-     MEDIUM: 30,
- };
-
- const PENALTIES = {
-     SMALL: 50,
-     MEDIUM: 100,
-     LARGE: 200,
- };
-
-
-
-         if (overstayMinutes <= 0) return 0;
-         if (overstayMinutes <= OVERSTAY_LIMITS.SMALL) return PENALTIES.SMALL;
-         if (overstayMinutes <= OVERSTAY_LIMITS.MEDIUM) return PENALTIES.MEDIUM;
-         if (overstayMinutes > OVERSTAY_LIMITS.MEDIUM) return PENALTIES.LARGE;
-
-         return 0;
-
-}
-
-
-
-
-// TRIGGERS some errors Number must be finite and non-negative values
 const spendingAlerts = (energySpendings: number, parkingSpendings: number, period: AlertPeriod) => {
     if (!Number.isFinite(energySpendings) || energySpendings < 0 ||
         !Number.isFinite(parkingSpendings) || parkingSpendings < 0) {
@@ -230,15 +177,11 @@ const spendingAlerts = (energySpendings: number, parkingSpendings: number, perio
 };
 
 
-export { calculateEvBilling, calculateEnergySpendings, calculateParkingSpendings, spendingAlerts , calculateOverstay };
+export { calculateEvBilling, calculateEnergySpendings, calculateParkingSpendings, spendingAlerts, calculateOverstay };
 
 export default function () {
     return null;
 }
-
-
-
-
 
 
 
