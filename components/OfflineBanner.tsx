@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -8,8 +8,15 @@ export function OfflineBanner() {
   const { isOffline, retryConnection } = useNetworkStatus();
   const insets = useSafeAreaInsets();
   const [retrying, setRetrying] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
-  if (!isOffline) {
+  useEffect(() => {
+    if (!isOffline) {
+      setDismissed(false);
+    }
+  }, [isOffline]);
+
+  if (!isOffline || dismissed) {
     return null;
   }
 
@@ -54,6 +61,14 @@ export function OfflineBanner() {
           ) : (
             <Text style={styles.retryText}>Retry</Text>
           )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.dismissBtn}
+          onPress={() => setDismissed(true)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons name="close" size={16} color="#A1A1AA" />
         </TouchableOpacity>
       </View>
     </View>
@@ -121,6 +136,11 @@ const styles = StyleSheet.create({
     color: "#09090B",
     fontSize: 12,
     fontWeight: "600",
+  },
+  dismissBtn: {
+    padding: 4,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 

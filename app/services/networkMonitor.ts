@@ -77,15 +77,20 @@ export function triggerOfflineAlert(force = false) {
   );
 }
 
+let lastProbeTimestamp = 0;
+const PROBE_DEBOUNCE_MS = 8000;
+
 export function reportNetworkFailure(err?: unknown) {
   if (err && !isLikelyNetworkError(err)) {
     return;
   }
-  const wasOffline = isOfflineState;
-  setOfflineInternal(true);
-  if (!wasOffline) {
-    triggerOfflineAlert(false);
+  const now = Date.now();
+  if (now - lastProbeTimestamp < PROBE_DEBOUNCE_MS) {
+    return;
   }
+  lastProbeTimestamp = now;
+  // Verify actual internet connectivity before marking the whole app offline
+  checkInternetConnection(false).catch(() => {});
 }
 
 export function reportNetworkSuccess() {
@@ -99,36 +104,17 @@ export async function checkInternetConnection(manualRetry = false): Promise<bool
     setOfflineInternal(true);
     if (manualRetry) {
       triggerOfflineAlert(true);
-    } else {
-      triggerOfflineAlert(false);
     }
     return false;
   }
 
-  let rawUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL || "").trim();
-  if (rawUrl && !rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
-    rawUrl = `https://${rawUrl}`;
-  }
-  const probeUrl = rawUrl
-    ? `${rawUrl.replace(/\/$/, "")}/auth/v1/health`
-    : "https://clients3.google.com/generate_204";
-  const anonKey = (
-    process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ||
-    ""
-  ).trim();
-
+  const probeUrl = "https://clients3.google.com/generate_204";
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5500);
+  const timeoutId = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const headers: Record<string, string> = {};
-    if (rawUrl && anonKey) {
-      headers.apikey = anonKey;
-    }
     const response = await fetch(probeUrl, {
-      method: "GET",
-      headers,
+      method: "HEAD",
       signal: controller.signal,
     });
     clearTimeout(timeoutId);
@@ -136,14 +122,13 @@ export async function checkInternetConnection(manualRetry = false): Promise<bool
       setOfflineInternal(false);
       return true;
     }
+    setOfflineInternal(false);
     return true;
-  } catch (err) {
+  } catch {
     clearTimeout(timeoutId);
     setOfflineInternal(true);
     if (manualRetry) {
       triggerOfflineAlert(true);
-    } else {
-      triggerOfflineAlert(false);
     }
     return false;
   }
