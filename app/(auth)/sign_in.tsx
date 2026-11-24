@@ -496,9 +496,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 26,
-    paddingTop: 40,
-    paddingBottom: 40,
+    paddingTop: 24,
+    paddingBottom: 32,
     justifyContent: "center",
   },
   headerSection: {

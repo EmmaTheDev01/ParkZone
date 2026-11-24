@@ -706,9 +706,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
     paddingHorizontal: 26,
     paddingTop: 20,
-    paddingBottom: 40,
+    paddingBottom: 32,
   },
   headerSection: {
     marginBottom: 28,
