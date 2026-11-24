@@ -725,6 +725,10 @@ export async function submitLocationReview(payload: {
             insertError = fallback.error;
         }
 
+        if (insertError) {
+            return { error: insertError.message || "Failed to publish review." };
+        }
+
         const reviewObj: LocationReview = {
             id: insertedData?.id || `rev_${Date.now()}`,
             location_id: payload.locationId,
@@ -811,168 +815,46 @@ export function parseLocationMeta(loc: any): {
     };
 }
 
-export const DB_REGISTERED_PARKING_SPACES: Record<string, ParkingSpace[]> = {
-    // Kigali Heights Parking (Standard Parking)
-    "11111111-1111-1111-1111-111111111111": [
-        {
-            id: "a0000000-0000-0000-0000-000000000001",
-            location_id: "11111111-1111-1111-1111-111111111111",
-            space_number: "R-01",
-            zone_code: "Zone A",
-            space_type: "regular",
-            price_per_hour_rwf: 500,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-1111-R01",
-            spot_label: "Available",
-            topology: "oblique",
-        },
-        {
-            id: "a0000000-0000-0000-0000-000000000002",
-            location_id: "11111111-1111-1111-1111-111111111111",
-            space_number: "R-02",
-            zone_code: "Zone A",
-            space_type: "regular",
-            price_per_hour_rwf: 500,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-1111-R02",
-            spot_label: "Available",
-            topology: "oblique",
-        },
-        {
-            id: "a0000000-0000-0000-0000-000000000003",
-            location_id: "11111111-1111-1111-1111-111111111111",
-            space_number: "R-03",
-            zone_code: "Zone A",
-            space_type: "regular",
-            price_per_hour_rwf: 500,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-1111-R03",
-            spot_label: "Available",
-            topology: "oblique",
-        },
-        {
-            id: "a0000000-0000-0000-0000-000000000004",
-            location_id: "11111111-1111-1111-1111-111111111111",
-            space_number: "M-01",
-            zone_code: "Zone A",
-            space_type: "regular",
-            price_per_hour_rwf: 200,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880408602_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-1111-M01",
-            spot_label: "Available",
-            topology: "oblique",
-        },
-    ],
-    // Kigali Convention Centre Accessible Parking (Accessible Facility)
-    "22222222-2222-2222-2222-222222222222": [
-        {
-            id: "b0000000-0000-0000-0000-000000000001",
-            location_id: "22222222-2222-2222-2222-222222222222",
-            space_number: "H-01",
-            zone_code: "Zone A",
-            space_type: "handicap",
-            price_per_hour_rwf: 300,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-2222-H01",
-            spot_label: "Accessible",
-            topology: "wide",
-        },
-        {
-            id: "b0000000-0000-0000-0000-000000000002",
-            location_id: "22222222-2222-2222-2222-222222222222",
-            space_number: "H-02",
-            zone_code: "Zone A",
-            space_type: "handicap",
-            price_per_hour_rwf: 300,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-2222-H02",
-            spot_label: "Accessible",
-            topology: "wide",
-        },
-        {
-            id: "b0000000-0000-0000-0000-000000000003",
-            location_id: "22222222-2222-2222-2222-222222222222",
-            space_number: "H-03",
-            zone_code: "Zone A",
-            space_type: "handicap",
-            price_per_hour_rwf: 300,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880428131_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-2222-H03",
-            spot_label: "Accessible",
-            topology: "wide",
-        },
-    ],
-    // Nyarutarama EV Charging Hub (EV Hypercharger Station)
-    "33333333-3333-3333-3333-333333333333": [
-        {
-            id: "c0000000-0000-0000-0000-000000000001",
-            location_id: "33333333-3333-3333-3333-333333333333",
-            space_number: "EV-01",
-            zone_code: "Zone A",
-            space_type: "ev",
-            price_per_hour_rwf: 1500,
-            watt_power_kw: 120,
-            price_per_kwh_rwf: 250,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-3333-EV01",
-            spot_label: "120kW DC",
-            topology: "perpendicular",
-        },
-        {
-            id: "c0000000-0000-0000-0000-000000000002",
-            location_id: "33333333-3333-3333-3333-333333333333",
-            space_number: "EV-02",
-            zone_code: "Zone A",
-            space_type: "ev",
-            price_per_hour_rwf: 1500,
-            watt_power_kw: 60,
-            price_per_kwh_rwf: 250,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-3333-EV02",
-            spot_label: "60kW DC",
-            topology: "perpendicular",
-        },
-        {
-            id: "c0000000-0000-0000-0000-000000000003",
-            location_id: "33333333-3333-3333-3333-333333333333",
-            space_number: "EV-03",
-            zone_code: "Zone A",
-            space_type: "ev",
-            price_per_hour_rwf: 1500,
-            watt_power_kw: 22,
-            price_per_kwh_rwf: 250,
-            is_occupied: false,
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
-            qr_code_token: "PZ-SPACE-3333-EV03",
-            spot_label: "22kW AC",
-            topology: "perpendicular",
-        },
-    ],
-};
+const PARKING_LOCATIONS_CACHE_KEY = "@parkzone_cached_locations";
+
+async function getCachedParkingLocations(): Promise<ParkingLocation[]> {
+    try {
+        const cached = await AsyncStorage.getItem(PARKING_LOCATIONS_CACHE_KEY);
+        if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                return parsed;
+            }
+        }
+    } catch {}
+    return [];
+}
 
 export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
-    const { data, error } = await supabase
-        .from("parking_locations")
-        .select("*")
-        .order("name", { ascending: true });
+    let data: any[] | null = null;
+    try {
+        const res = await supabase
+            .from("parking_locations")
+            .select("*")
+            .order("name", { ascending: true });
 
-    if (error) {
-        console.warn("fetchParkingLocations error:", error);
-        return [];
+        if (res.error || !res.data) {
+            return await getCachedParkingLocations();
+        }
+        data = res.data;
+    } catch {
+        return await getCachedParkingLocations();
     }
 
-    const { data: allSpaces } = await supabase
-        .from("parking_spaces")
-        .select("*");
+    let allSpaces: any[] | null = null;
+    try {
+        const spRes = await supabase
+            .from("parking_spaces")
+            .select("*");
+        allSpaces = spRes.data;
+    } catch {
+        allSpaces = null;
+    }
 
     const spacesByLoc = new Map<string, any[]>();
     (allSpaces || []).forEach((s: any) => {
@@ -981,13 +863,7 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
         spacesByLoc.set(s.location_id, arr);
     });
 
-    if (spacesByLoc.size === 0) {
-        Object.entries(DB_REGISTERED_PARKING_SPACES).forEach(([locId, spaces]) => {
-            spacesByLoc.set(locId, spaces);
-        });
-    }
-
-    return ((data as any[]) || [])
+    const mapped = ((data as any[]) || [])
         .filter((loc) => loc.is_active !== false && loc.status !== "inactive")
         .map((loc) => {
         const meta = parseLocationMeta(loc);
@@ -1004,7 +880,7 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             loc.available_spots !== undefined && loc.available_spots !== null
                 ? Number(loc.available_spots)
                 : locSpaces.length > 0
-                ? locSpaces.filter((s: any) => s.status === "available" && !s.is_occupied).length
+                ? locSpaces.filter((s: any) => !s.is_occupied && (s.status === undefined || s.status === "available")).length
                 : totalSpots;
 
         const hourlyRate =
@@ -1054,6 +930,13 @@ export async function fetchParkingLocations(): Promise<ParkingLocation[]> {
             updated_at: loc.updated_at,
         };
     });
+
+    if (mapped.length > 0) {
+        AsyncStorage.setItem(PARKING_LOCATIONS_CACHE_KEY, JSON.stringify(mapped)).catch(() => {});
+        return mapped;
+    }
+
+    return [];
 }
 
 export async function fetchSpotsForLocation(
@@ -1103,8 +986,6 @@ export async function fetchSpotsForLocation(
             .order("space_number", { ascending: true });
         if (retryRes.data && retryRes.data.length > 0) {
             rawSpaces = retryRes.data as any;
-        } else if (DB_REGISTERED_PARKING_SPACES[locationId]) {
-            rawSpaces = DB_REGISTERED_PARKING_SPACES[locationId];
         }
     }
 
@@ -1342,11 +1223,11 @@ export async function fetchEvChargers(locationId: string): Promise<EvChargerTele
             max_output_kw: s.watt_power_kw || (s.space_number?.includes("03") ? 22 : 60),
             max_power_watts: (s.watt_power_kw || (s.space_number?.includes("03") ? 22 : 60)) * 1000,
             price_per_kwh: s.price_per_kwh_rwf || 250,
-            status: s.status === "available" && !s.is_occupied ? "available" : "charging",
-            current_power_draw_kw: s.status === "available" && !s.is_occupied ? 0 : 42,
-            charging_power_watts: s.status === "available" && !s.is_occupied ? 0 : 42000,
+            status: !s.is_occupied && (s.status === undefined || s.status === "available") ? "available" : "charging",
+            current_power_draw_kw: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 42,
+            charging_power_watts: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 42000,
             voltage_volts: 400,
-            amperage_amps: s.status === "available" && !s.is_occupied ? 0 : 105,
+            amperage_amps: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 105,
             is_operational: true,
             operational_status: "operational",
             api_provider: "OCPP 2.0.1",
@@ -1514,7 +1395,14 @@ export async function startParkingSession(params: {
     }
 
     const exactHours = params.durationHours || 1;
-    const exactTotal = params.totalAmount !== undefined ? params.totalAmount : hourlyRate * exactHours;
+    const rawHourlyTotal = hourlyRate * exactHours;
+    const reachedDailyCap = dailyCap > 0 && rawHourlyTotal >= dailyCap;
+    const exactTotal = params.totalAmount !== undefined
+        ? params.totalAmount
+        : reachedDailyCap
+        ? dailyCap
+        : rawHourlyTotal;
+    const rateApplied = reachedDailyCap ? "daily" : "hourly";
     const paymentStatus = params.paymentStatus || "paid";
 
     const ticketNumber = `PZ-${Date.now().toString().slice(-6)}`;
@@ -1533,7 +1421,7 @@ export async function startParkingSession(params: {
             space_id: dbSpaceId || null,
             hourly_rate: hourlyRate,
             daily_cap: dailyCap,
-            rate_applied: "hourly",
+            rate_applied: rateApplied,
             hours_elapsed: exactHours,
             total_amount: exactTotal,
             amount_paid: paymentStatus === "paid" ? exactTotal : 0,
@@ -1613,104 +1501,35 @@ export async function completeParkingSession(params: {
  * Fetch all EV Stations & their live chargers directly from database
  */
 export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[]> {
-    // Fallback default Kigali EV stations if database is offline or empty
-    const defaultKigaliEvStations: DbEvStationItem[] = [
-        {
-            id: "33333333-3333-3333-3333-333333333333",
-            name: "Nyarutarama EV Charging Hub",
-            address: "KG 9 Ave, Nyarutarama",
-            city: "Kigali",
-            distance: "",
-            latitude: -1.942,
-            longitude: 30.113,
-            tariff: "250 RWF/kWh",
-            image: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
-            image_url: "https://jtemzkoydifrzdelxnkf.supabase.co/storage/v1/object/public/parking-images/locations/1793880444198_data-upload.jpeg",
-            chargers: [
-                {
-                    id: "c0000000-0000-0000-0000-000000000001",
-                    location_id: "33333333-3333-3333-3333-333333333333",
-                    station_identifier: "EV-01",
-                    connector_type: "CCS2",
-                    max_output_kw: 60,
-                    max_power_watts: 60000,
-                    price_per_kwh: 250,
-                    status: "available",
-                    current_power_draw_kw: 0,
-                    charging_power_watts: 0,
-                    voltage_volts: 400,
-                    amperage_amps: 0,
-                    is_operational: true,
-                    operational_status: "operational",
-                    api_provider: "OCPP 2.0.1",
-                    flat_rate_full_rwf: 10000,
-                    flat_rate_quick_rwf: 9000,
-                    quick_session_threshold_mins: 30,
-                    image_url: undefined,
-                },
-                {
-                    id: "c0000000-0000-0000-0000-000000000002",
-                    location_id: "33333333-3333-3333-3333-333333333333",
-                    station_identifier: "EV-02",
-                    connector_type: "CCS2",
-                    max_output_kw: 60,
-                    max_power_watts: 60000,
-                    price_per_kwh: 250,
-                    status: "available",
-                    current_power_draw_kw: 0,
-                    charging_power_watts: 0,
-                    voltage_volts: 400,
-                    amperage_amps: 0,
-                    is_operational: true,
-                    operational_status: "operational",
-                    api_provider: "OCPP 2.0.1",
-                    flat_rate_full_rwf: 10000,
-                    flat_rate_quick_rwf: 9000,
-                    quick_session_threshold_mins: 30,
-                    image_url: undefined,
-                },
-                {
-                    id: "c0000000-0000-0000-0000-000000000003",
-                    location_id: "33333333-3333-3333-3333-333333333333",
-                    station_identifier: "EV-03",
-                    connector_type: "Type 2",
-                    max_output_kw: 22,
-                    max_power_watts: 22000,
-                    price_per_kwh: 250,
-                    status: "available",
-                    current_power_draw_kw: 0,
-                    charging_power_watts: 0,
-                    voltage_volts: 400,
-                    amperage_amps: 0,
-                    is_operational: true,
-                    operational_status: "operational",
-                    api_provider: "OCPP 2.0.1",
-                    flat_rate_full_rwf: 10000,
-                    flat_rate_quick_rwf: 9000,
-                    quick_session_threshold_mins: 30,
-                    image_url: undefined,
-                },
-            ],
-        },
-    ];
+    let locs: any[] | null = null;
+    try {
+        const { data, error: locErr } = await supabase
+            .from("parking_locations")
+            .select("*")
+            .eq("is_active", true)
+            .order("name", { ascending: true });
 
-    const { data: locs, error: locErr } = await supabase
-        .from("parking_locations")
-        .select("*")
-        .eq("is_active", true)
-        .order("name", { ascending: true });
-
-    if (locErr || !locs || locs.length === 0) {
-        return defaultKigaliEvStations;
+        if (locErr || !data || data.length === 0) {
+            return [];
+        }
+        locs = data;
+    } catch {
+        return [];
     }
 
-    const { data: allChargers } = await supabase
-        .from("ev_charging_points")
-        .select("*");
-
-    const { data: allSpaces } = await supabase
-        .from("parking_spaces")
-        .select("*");
+    let allChargers: any[] | null = null;
+    let allSpaces: any[] | null = null;
+    try {
+        const [chRes, spRes] = await Promise.all([
+            supabase.from("ev_charging_points").select("*"),
+            supabase.from("parking_spaces").select("*"),
+        ]);
+        allChargers = chRes.data;
+        allSpaces = spRes.data;
+    } catch {
+        allChargers = null;
+        allSpaces = null;
+    }
 
     const chargersByLoc = new Map<string, EvChargerTelemetry[]>();
     (allChargers || []).forEach((c: any) => {
@@ -1741,12 +1560,6 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
         spacesByLoc.set(s.location_id, arr);
     });
 
-    if (spacesByLoc.size === 0) {
-        Object.entries(DB_REGISTERED_PARKING_SPACES).forEach(([locId, spaces]) => {
-            spacesByLoc.set(locId, spaces);
-        });
-    }
-
     const stations: DbEvStationItem[] = [];
     for (const loc of locs) {
         const meta = parseLocationMeta(loc);
@@ -1764,7 +1577,7 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
 
         let chargers = chargersByLoc.get(loc.id) || [];
 
-        // If no dedicated ev_charging_points rows exist, derive chargers from parking_spaces
+        // If no dedicated ev_charging_points rows exist, derive chargers from real parking_spaces rows
         if (chargers.length === 0 && evSpaces.length > 0) {
             chargers = evSpaces.map((s: any, idx: number) => ({
                 id: s.id,
@@ -1775,11 +1588,11 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
                 max_output_kw: s.watt_power_kw || (s.space_number?.includes("03") ? 22 : 60),
                 max_power_watts: (s.watt_power_kw || (s.space_number?.includes("03") ? 22 : 60)) * 1000,
                 price_per_kwh: s.price_per_kwh_rwf || 250,
-                status: s.status === "available" && !s.is_occupied ? "available" : "charging",
-                current_power_draw_kw: s.status === "available" && !s.is_occupied ? 0 : 42,
-                charging_power_watts: s.status === "available" && !s.is_occupied ? 0 : 42000,
+                status: !s.is_occupied && (s.status === undefined || s.status === "available") ? "available" : "charging",
+                current_power_draw_kw: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 42,
+                charging_power_watts: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 42000,
                 voltage_volts: 400,
-                amperage_amps: s.status === "available" && !s.is_occupied ? 0 : 105,
+                amperage_amps: !s.is_occupied && (s.status === undefined || s.status === "available") ? 0 : 105,
                 is_operational: true,
                 operational_status: "operational",
                 api_provider: "OCPP 2.0.1",
@@ -1790,33 +1603,6 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             }));
         }
 
-        // Fallback chargers if the station has zero space rows configured yet
-        if (chargers.length === 0) {
-            chargers = [1, 2, 3, 4].map((num) => ({
-                id: `${loc.id}-charger-${num}`,
-                location_id: loc.id,
-                station_identifier: `BAY-0${num}`,
-                connector_type: num === 4 ? "Type 2" : "CCS2",
-                max_output_kw: num === 4 ? 22 : 60,
-                max_power_watts: num === 4 ? 22000 : 60000,
-                price_per_kwh: 250,
-                status: "available",
-                current_power_draw_kw: 0,
-                charging_power_watts: 0,
-                voltage_volts: 400,
-                amperage_amps: 0,
-                is_operational: true,
-                operational_status: "operational",
-                api_provider: "OCPP 2.0.1",
-                flat_rate_full_rwf: 10000,
-                flat_rate_quick_rwf: 9000,
-                quick_session_threshold_mins: 30,
-                image_url: loc.image_url?.trim() || undefined,
-            }));
-        }
-
-        const quick = chargers[0]?.flat_rate_quick_rwf || 9000;
-        const full = chargers[0]?.flat_rate_full_rwf || 10000;
         const dbStationImg = loc.image_url && loc.image_url.trim().length > 0 ? loc.image_url.trim() : undefined;
 
         stations.push({
@@ -1831,10 +1617,6 @@ export async function fetchAllEvStationsWithChargers(): Promise<DbEvStationItem[
             image_url: dbStationImg,
             chargers,
         });
-    }
-
-    if (stations.length === 0) {
-        return defaultKigaliEvStations;
     }
 
     return stations;
@@ -1934,7 +1716,9 @@ export async function fetchUserParkingHistory(userId?: string): Promise<ParkingH
         `);
 
     if (userPlates.length > 0) {
-        const plateList = userPlates.map((p) => `"${p}"`).join(",");
+        const plateList = userPlates
+            .map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`)
+            .join(",");
         ticketQuery = ticketQuery.or(`user_id.eq.${uid},vehicle_plate.in.(${plateList})`);
     } else {
         ticketQuery = ticketQuery.eq("user_id", uid);
@@ -2004,7 +1788,9 @@ export async function fetchUserParkingHistory(userId?: string): Promise<ParkingH
         `);
 
     if (userPlates.length > 0) {
-        const plateList = userPlates.map((p) => `"${p}"`).join(",");
+        const plateList = userPlates
+            .map((p) => `"${p.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`)
+            .join(",");
         evQuery = evQuery.or(`user_id.eq.${uid},vehicle_plate.in.(${plateList})`);
     } else {
         evQuery = evQuery.eq("user_id", uid);
@@ -2081,25 +1867,39 @@ export async function startEvChargingSession(params: {
     await ensureUserProfile(user);
 
     const sessionNumber = `EV-${Date.now().toString().slice(-6)}`;
-    const { data, error } = await supabase
+    const basePayload = {
+        session_number: sessionNumber,
+        user_id: user.id,
+        vehicle_plate: params.vehiclePlate,
+        location_id: params.locationId && isValidUuid(params.locationId) ? params.locationId : null,
+        charger_id: params.chargerId && isValidUuid(params.chargerId) ? params.chargerId : null,
+        bay_number: params.bayNumber,
+        charger_power_kw: params.chargerPowerKw,
+        initial_soc: Math.round(params.initialSoc),
+        target_soc: Math.round(params.targetSoc),
+        status: "active",
+        charging_amount_rwf: params.amountPaid || 9000,
+        started_at: new Date().toISOString(),
+    };
+
+    let { data, error } = await supabase
         .from("ev_charging_sessions")
         .insert({
-            session_number: sessionNumber,
-            user_id: user.id,
-            vehicle_plate: params.vehiclePlate,
-            location_id: params.locationId && isValidUuid(params.locationId) ? params.locationId : null,
-            charger_id: params.chargerId && isValidUuid(params.chargerId) ? params.chargerId : null,
-            bay_number: params.bayNumber,
-            charger_power_kw: params.chargerPowerKw,
-            initial_soc: Math.round(params.initialSoc),
-            target_soc: Math.round(params.targetSoc),
-            status: "active",
+            ...basePayload,
             payment_status: params.paymentStatus || "paid",
-            charging_amount_rwf: params.amountPaid || 9000,
-            started_at: new Date().toISOString(),
         })
         .select()
         .single();
+
+    if (error && (error.code === "PGRST204" || error.message?.includes("payment_status"))) {
+        const retry = await supabase
+            .from("ev_charging_sessions")
+            .insert(basePayload)
+            .select()
+            .single();
+        data = retry.data;
+        error = retry.error;
+    }
 
     if (error) {
         return { error: error.message };
@@ -2121,25 +1921,37 @@ export async function completeEvChargingSession(params: {
     const { data: { user } } = await supabase.auth.getUser();
     const nowIso = new Date().toISOString();
 
+    const baseUpdate = {
+        final_soc: params.finalSoc,
+        delivered_kwh: params.deliveredKwh,
+        elapsed_seconds: params.elapsedSeconds,
+        charging_amount_rwf: params.chargingAmountRwf,
+        parking_amount_rwf: 0,
+        tariff_tier: params.tariffTier,
+        status: "completed",
+        completed_at: nowIso,
+        updated_at: nowIso,
+    };
+
     // 1. If valid UUID sessionId provided, update existing active session
     if (params.sessionId && isValidUuid(params.sessionId)) {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .from("ev_charging_sessions")
-            .update({
-                final_soc: params.finalSoc,
-                delivered_kwh: params.deliveredKwh,
-                elapsed_seconds: params.elapsedSeconds,
-                charging_amount_rwf: params.chargingAmountRwf,
-                parking_amount_rwf: 0,
-                tariff_tier: params.tariffTier,
-                status: "completed",
-                payment_status: "paid",
-                completed_at: nowIso,
-                updated_at: nowIso,
-            })
+            .update({ ...baseUpdate, payment_status: "paid" })
             .eq("id", params.sessionId)
             .select()
             .single();
+
+        if (error && (error.code === "PGRST204" || error.message?.includes("payment_status"))) {
+            const retry = await supabase
+                .from("ev_charging_sessions")
+                .update(baseUpdate)
+                .eq("id", params.sessionId)
+                .select()
+                .single();
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (!error && data) {
             return { data };
@@ -2149,28 +1961,31 @@ export async function completeEvChargingSession(params: {
     // 2. If sessionId not found or not valid UUID, insert completed session directly
     if (user?.id) {
         const sessionNumber = `EV-${Date.now().toString().slice(-6)}`;
-        const { data, error } = await supabase
+        const baseInsert = {
+            session_number: sessionNumber,
+            user_id: user.id,
+            vehicle_plate: params.vehiclePlate || "EV",
+            location_id: params.locationId && isValidUuid(params.locationId) ? params.locationId : null,
+            bay_number: params.bayNumber || "EV-1",
+            ...baseUpdate,
+            started_at: new Date(Date.now() - (params.elapsedSeconds || 60) * 1000).toISOString(),
+        };
+
+        let { data, error } = await supabase
             .from("ev_charging_sessions")
-            .insert({
-                session_number: sessionNumber,
-                user_id: user.id,
-                vehicle_plate: params.vehiclePlate || "EV",
-                location_id: params.locationId && isValidUuid(params.locationId) ? params.locationId : null,
-                bay_number: params.bayNumber || "EV-1",
-                final_soc: params.finalSoc,
-                delivered_kwh: params.deliveredKwh,
-                elapsed_seconds: params.elapsedSeconds,
-                charging_amount_rwf: params.chargingAmountRwf,
-                parking_amount_rwf: 0,
-                tariff_tier: params.tariffTier,
-                status: "completed",
-                payment_status: "paid",
-                started_at: new Date(Date.now() - (params.elapsedSeconds || 60) * 1000).toISOString(),
-                completed_at: nowIso,
-                updated_at: nowIso,
-            })
+            .insert({ ...baseInsert, payment_status: "paid" })
             .select()
             .single();
+
+        if (error && (error.code === "PGRST204" || error.message?.includes("payment_status"))) {
+            const retry = await supabase
+                .from("ev_charging_sessions")
+                .insert(baseInsert)
+                .select()
+                .single();
+            data = retry.data;
+            error = retry.error;
+        }
 
         if (!error && data) {
             return { data };
@@ -2208,10 +2023,15 @@ export async function updateWalletBalance(newBalanceRwf: number, userId?: string
     }
     if (!uid) return newBalanceRwf;
 
-    await supabase
+    const { error } = await supabase
         .from("profiles")
         .update({ wallet_balance_rwf: newBalanceRwf, updated_at: new Date().toISOString() })
         .eq("id", uid);
+
+    if (error) {
+        console.warn("updateWalletBalance error:", error.message);
+        throw new Error(error.message);
+    }
 
     return newBalanceRwf;
 }
@@ -2414,10 +2234,13 @@ export async function flagOverdueInvoice(params: {
             flagged_by_agent_id: params.agentId || null,
             overdue_amount_rwf: params.overdueAmount,
             notification_status: "pending",
-            resolution_status: "open",
         })
         .select()
         .single();
+
+    if (error) {
+        return { data: null, error };
+    }
 
     // Mark ticket as overdue
     await supabase
@@ -2425,13 +2248,20 @@ export async function flagOverdueInvoice(params: {
         .update({ status: "overdue", is_flagged_by_agent: true })
         .eq("id", params.ticketId);
 
-    // Update vehicle arrears
+    // Accumulate vehicle arrears rather than overwriting existing arrears
+    const { data: existingVeh } = await supabase
+        .from("vehicles")
+        .select("total_arrears_rwf")
+        .eq("plate_hash", plateHash)
+        .maybeSingle();
+    const updatedArrears = (Number(existingVeh?.total_arrears_rwf) || 0) + params.overdueAmount;
+
     await supabase
         .from("vehicles")
-        .update({ has_unpaid_arrears: true, total_arrears_rwf: params.overdueAmount })
+        .update({ has_unpaid_arrears: true, total_arrears_rwf: updatedArrears })
         .eq("plate_hash", plateHash);
 
-    return { data, error };
+    return { data, error: null };
 }
 
 export async function issueZeroContactCitation(params: {
@@ -2447,7 +2277,6 @@ export async function issueZeroContactCitation(params: {
     const rawPlate = params.plateNumber.trim().toUpperCase();
     const plateHash = hashLicensePlate(rawPlate);
     const fineNumber = `FN-${Date.now().toString().slice(-6)}`;
-    const iremboCode = `IREMBO-RW-${Math.floor(100000 + Math.random() * 900000)}`;
     const ALLOWED_REASONS = [
         "unregistered_parking",
         "overstay",
@@ -2470,11 +2299,8 @@ export async function issueZeroContactCitation(params: {
             fine_amount: params.fineAmount ?? 3000.0,
             currency: "RWF",
             reason: reasonCode,
-            issued_by: params.agentId || null,
+            issued_by_agent_id: params.agentId && isValidUuid(params.agentId) ? params.agentId : null,
             payment_status: "unpaid",
-            irembo_reference_code: iremboCode,
-            evidence_photo_url: params.photoUrl || null,
-            notes: params.notes || "Contactless citation issued: vehicle parked without active app ticket.",
         })
         .select()
         .single();

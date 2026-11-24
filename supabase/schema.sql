@@ -766,6 +766,7 @@ CREATE TABLE IF NOT EXISTS public.ev_charging_sessions (
     parking_amount_rwf NUMERIC(10, 2) NOT NULL DEFAULT 0.00,
     tariff_tier VARCHAR(32) NOT NULL DEFAULT 'under_30m',
     status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'cancelled')),
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid' CHECK (payment_status IN ('unpaid', 'paid', 'refunded')),
     started_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     completed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -775,6 +776,7 @@ CREATE TABLE IF NOT EXISTS public.ev_charging_sessions (
 ALTER TABLE public.ev_charging_sessions ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL;
 ALTER TABLE public.ev_charging_sessions ADD COLUMN IF NOT EXISTS vehicle_id UUID REFERENCES public.vehicles(id) ON DELETE SET NULL;
 ALTER TABLE public.ev_charging_sessions ADD COLUMN IF NOT EXISTS completed_at TIMESTAMPTZ;
+ALTER TABLE public.ev_charging_sessions ADD COLUMN IF NOT EXISTS payment_status VARCHAR(20) NOT NULL DEFAULT 'unpaid';
 
 CREATE INDEX IF NOT EXISTS idx_ev_sessions_user ON public.ev_charging_sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_ev_sessions_status ON public.ev_charging_sessions(status);

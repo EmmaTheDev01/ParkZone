@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useId } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, {
   Path,
@@ -233,11 +233,12 @@ export const HorizontalCarSvg: React.FC<{
 }> = ({ color, width = 114, height = 56.5, scale = 1 }) => {
   const w = width * scale;
   const h = height * scale;
+  const gradId = `hBodyGrad-${useId().replace(/:/g, "")}`;
 
   return (
     <Svg width={w} height={h} viewBox="0 0 960 476">
       <Defs>
-        <LinearGradient id="hBodyGrad" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color.bodyHighlight} />
           <Stop offset="0.5" stopColor={color.body} />
           <Stop offset="1" stopColor={color.bodyShadow} />
@@ -257,7 +258,7 @@ export const HorizontalCarSvg: React.FC<{
         {/* Sculpted Dynamic Car Body (Derived from path2853) */}
         <Path
           d="m 610.52,493.69 c -1.5086,0.009 -4.7211,0.30611 -6.4687,0.9375 l -3.5,1.5 8.6562,35.844 -124.81,0.28125 c -77.963,0.1654 -166.52,-11.504 -232.93,-9.5 -66.412,2.0037 -152.12,28 -152.12,28 l -13.687,3.7812 c -19.251,5.2963 -25.718,97.367 -25.718,166.78 0,1.113 0.02665,2.2531 0.03125,3.375 -0.0046,1.1219 -0.03125,2.262 -0.03125,3.375 0,69.414 6.4673,161.48 25.718,166.78 l 13.687,3.7812 c 0,0 85.711,25.996 152.12,28 66.412,2.0037 154.97,-9.6654 232.93,-9.5 l 124.81,0.28125 -8.6562,35.844 3.5,1.5 c 1.7476,0.63139 4.96,0.92854 6.4687,0.9375 0.84859,0.005 1.7551,-0.0744 2.6875,-0.25 0.3107,-0.0584 0.62352,-0.14119 0.93749,-0.21875 0.30459,-0.0754 0.63259,-0.15686 0.93749,-0.25 0.62844,-0.19269 1.2635,-0.42206 1.875,-0.6875 1.8215,-0.79201 3.5342,-1.9028 4.7812,-3.2812 0.01,-0.0107 0.0217,-0.0208 0.0312,-0.0312 0.6248,-0.69658 1.1123,-1.4528 1.4687,-2.2812 l 12.156,-31.25 109.94,0.25 c 23.9,11.942 45.511,10.719 73.593,10.719 133.25,0 187.63002,-86.586 187.00002,-201.38 0,-0.7802 -0.019,-1.5656 -0.031,-2.3438 0.012,-0.77811 0.031,-1.5636 0.031,-2.3438 0.6282,-114.79 -53.74902,-201.38 -187.00002,-201.38 -28.082,0 -49.693,-1.2236 -73.593,10.719 l -109.94,0.25 -12.156,-31.25 c -0.35645,-0.82844 -0.84393,-1.5847 -1.4687,-2.2812 -0.01,-0.0104 -0.0213,-0.0206 -0.0312,-0.0312 -1.247,-1.3785 -2.9597,-2.4892 -4.7812,-3.2812 -0.61148,-0.26544 -1.2465,-0.49481 -1.875,-0.6875 -0.3049,-0.0931 -0.6329,-0.1746 -0.93749,-0.25 -0.31397,-0.0776 -0.62679,-0.16035 -0.93749,-0.21875 -0.93239,-0.1756 -1.8389,-0.255 -2.6875,-0.25 z"
-          fill="url(#hBodyGrad)"
+          fill={`url(#${gradId})`}
           stroke={color.bodyHighlight}
           strokeWidth={3}
         />
@@ -338,16 +339,19 @@ export const VerticalSedanSvg: React.FC<{
 }> = ({ color, width = 50, height = 110, scale = 1 }) => {
   const w = width * scale;
   const h = height * scale;
+  const uid = useId().replace(/:/g, "");
+  const linearId = `sedanLinearGrad-${uid}`;
+  const radialId = `sedanRadialBody-${uid}`;
 
   return (
     <Svg width={w} height={h} viewBox="0 0 358.85 789.36">
       <Defs>
-        <LinearGradient id="sedanLinearGrad" x1="0" y1="0" x2="0" y2="1">
+        <LinearGradient id={linearId} x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={color.bodyHighlight} />
           <Stop offset="1" stopColor={color.bodyShadow} />
         </LinearGradient>
         <RadialGradient
-          id="sedanRadialBody"
+          id={radialId}
           cx="179"
           cy="394"
           r="400"
@@ -368,7 +372,7 @@ export const VerticalSedanSvg: React.FC<{
       {/* Main Sculpted Sedan Body (path184) */}
       <Path
         d="m178.73 782.98c-113.07 2.362-130.4-17.92-147.11-21.261-16.705-38.776-19.877-365.73-9.855-392.46 7.493-60.54-4.936-70.565-8.687-143.53-7.14-85.213 9.815-37.829-4.439-124.48 21.658-90.216-19.136-92.053 168.52-100.63 172.21 2.401 147.96 10.415 169.61 100.63-14.254 86.652 2.701 39.268-4.439 124.48-3.751 72.961-16.18 82.986-8.687 143.53 10.022 26.727 6.85 353.68-9.855 392.46-26.153 15.153-95.459 21.261-145.07 21.261z"
-        fill="url(#sedanRadialBody)"
+        fill={`url(#${radialId})`}
         stroke={color.bodyHighlight}
         strokeWidth={1.5}
       />
@@ -460,12 +464,13 @@ export const VerticalHatchbackSvg: React.FC<{
 }> = ({ color, width = 52, height = 108, scale = 1 }) => {
   const w = width * scale;
   const h = height * scale;
+  const radialId = `hatchbackRadialBody-${useId().replace(/:/g, "")}`;
 
   return (
     <Svg width={w} height={h} viewBox="0 0 464.05 970.73">
       <Defs>
         <RadialGradient
-          id="hatchbackRadialBody"
+          id={radialId}
           cx="232"
           cy="485"
           r="485"
@@ -480,7 +485,7 @@ export const VerticalHatchbackSvg: React.FC<{
       {/* Main Hatchback Bodywork (path1228) */}
       <Path
         d="m231.35 2.0918c175.61 6.1579 228.86 30.31 209.41 288.39-3.05 7.13-6.11 14.26-9.16 21.38 3.6 119.1 7.2 238.92 0 357.29 11.69 12.77 6.11 29.86 9.16 44.79 5 38.45 7.12 92.73 2.04 145.57-8.5 118.7-132.17 107.84-202.57 109.93-78.45-1.75-184.26 23.84-213.76-108.92-2.884-61.2-3.604-110.16-0.005-177.12 2.714-5.09 5.429-10.17 8.143-15.26-3.277-117.65-7.274-233.14-1.194-357.26-3.599-9.84-7.198-19.68-10.797-29.51-13.196-254.33 36.949-270.4 208.73-279.28z"
-        fill="url(#hatchbackRadialBody)"
+        fill={`url(#${radialId})`}
         stroke={color.bodyHighlight}
         strokeWidth={1.5}
       />

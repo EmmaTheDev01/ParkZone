@@ -6,9 +6,10 @@ const VOICE_MUTED_STORAGE_KEY = "@parkzone_voice_guidance_muted";
 class VoiceGuidanceService {
   private isMuted: boolean = false;
   private isSpeaking: boolean = false;
+  private initPromise: Promise<void>;
 
   constructor() {
-    this.init();
+    this.initPromise = this.init();
   }
 
   private async init() {
@@ -57,29 +58,32 @@ class VoiceGuidanceService {
   }
 
   public speak(text: string, priority: "normal" | "high" = "normal") {
-    if (this.isMuted || !text) return;
+    if (!text) return;
 
-    try {
-      if (priority === "high" || !this.isSpeaking) {
-        Speech.stop();
+    this.initPromise.then(() => {
+      if (this.isMuted) return;
+      try {
+        if (priority === "high" || !this.isSpeaking) {
+          Speech.stop();
+        }
+
+        this.isSpeaking = true;
+        Speech.speak(text, {
+          language: "en-US",
+          pitch: 1.05,
+          rate: 0.98,
+          onDone: () => {
+            this.isSpeaking = false;
+          },
+          onError: () => {
+            this.isSpeaking = false;
+          },
+        });
+      } catch (e) {
+        console.warn("Voice guidance error:", e);
+        this.isSpeaking = false;
       }
-
-      this.isSpeaking = true;
-      Speech.speak(text, {
-        language: "en-US",
-        pitch: 1.05,
-        rate: 0.98,
-        onDone: () => {
-          this.isSpeaking = false;
-        },
-        onError: () => {
-          this.isSpeaking = false;
-        },
-      });
-    } catch (e) {
-      console.warn("Voice guidance error:", e);
-      this.isSpeaking = false;
-    }
+    });
   }
 
   public announceSlotSelected(spaceNumber: string, locationName: string, options?: {

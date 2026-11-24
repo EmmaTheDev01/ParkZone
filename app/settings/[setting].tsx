@@ -553,14 +553,21 @@ export default function Setting() {
       const startPing = Date.now();
       const { data: { user } } = await supabase.auth.getUser();
 
-      // 1. Load persisted toggles from AsyncStorage
+      // 1. Reset to defaults for the active setting, then hydrate from AsyncStorage
+      const defaultToggles: Record<string, boolean> = {};
+      item.toggles?.forEach((t) => {
+        defaultToggles[t.key] = t.defaultVal;
+      });
       try {
         const savedToggles = await AsyncStorage.getItem(`@parkzone_toggles_${setting}`);
         if (savedToggles) {
           const parsed = JSON.parse(savedToggles);
-          setToggles((prev) => ({ ...prev, ...parsed }));
+          setToggles({ ...defaultToggles, ...parsed });
+        } else {
+          setToggles(defaultToggles);
         }
       } catch (err) {
+        setToggles(defaultToggles);
         console.warn("Failed to load local toggles:", err);
       }
 
@@ -570,8 +577,11 @@ export default function Setting() {
         if (savedOptions) {
           const parsed = JSON.parse(savedOptions);
           setOptionsCustomState(parsed);
+        } else {
+          setOptionsCustomState({});
         }
       } catch (err) {
+        setOptionsCustomState({});
         console.warn("Failed to load local options:", err);
       }
 
@@ -1176,10 +1186,6 @@ export default function Setting() {
           "Mobile Money Payment Guide",
           "1. Dial *182# on MTN or Airtel\n2. Select Pay Bill / Merchant\n3. Follow the prompt on your ParkZone invoice\n4. Confirm amount in RWF"
         );
-        break;
-
-      case "change_pw":
-        router.push("/(auth)/forgot_pass");
         break;
 
       case "terms":

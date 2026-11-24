@@ -235,12 +235,12 @@ const Activities = () => {
   // Hide tab bar when invoice modal is open
   useEffect(() => {
     if (selectedInvoice) {
-      navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
+      navigation.setOptions({ tabBarStyle: { display: "none" } });
     } else {
-      navigation.getParent()?.setOptions({ tabBarStyle: undefined });
+      navigation.setOptions({ tabBarStyle: undefined });
     }
     return () => {
-      navigation.getParent()?.setOptions({ tabBarStyle: undefined });
+      navigation.setOptions({ tabBarStyle: undefined });
     };
   }, [selectedInvoice, navigation]);
 
@@ -461,21 +461,31 @@ const Activities = () => {
     const newHours = (activeTicket.durationHours || 1) + 1;
     const newTotal = newHours * addedRate;
 
-    // Trigger mobile payment dial code in background for extension
-    initiateMobilePayment(addedRate).catch(() => {});
+    try {
+      // Trigger mobile payment dial code in background for extension
+      initiateMobilePayment(addedRate).catch(() => {});
 
-    await supabase
-      .from("parking_tickets")
-      .update({ total_amount: newTotal, hours_elapsed: newHours })
-      .eq("id", activeTicket.id);
-    setActiveTicket({
-      ...activeTicket,
-      durationHours: newHours,
-    });
-    Alert.alert(
-      "Parking Extended",
-      `Added +1 hour to your parking session (+${addedRate.toLocaleString()} RWF).\nPayment initiated in the background.`
-    );
+      const { error } = await supabase
+        .from("parking_tickets")
+        .update({ total_amount: newTotal, hours_elapsed: newHours })
+        .eq("id", activeTicket.id);
+
+      if (error) {
+        Alert.alert("Extension Failed", error.message || "Could not extend parking session.");
+        return;
+      }
+
+      setActiveTicket({
+        ...activeTicket,
+        durationHours: newHours,
+      });
+      Alert.alert(
+        "Parking Extended",
+        `Added +1 hour to your parking session (+${addedRate.toLocaleString()} RWF).\nPayment initiated in the background.`
+      );
+    } catch (err: any) {
+      Alert.alert("Extension Error", err?.message || "Could not extend parking session.");
+    }
   };
 
   // Filtered recent parking history
@@ -498,11 +508,11 @@ const Activities = () => {
       // Search query check
       if (searchQuery.trim().length > 0) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = item.name.toLowerCase().includes(q);
-        const matchesAddr = item.address.toLowerCase().includes(q);
-        const matchesBay = item.bayNumber.toLowerCase().includes(q);
-        const matchesPlate = item.plate.toLowerCase().includes(q);
-        const matchesReceipt = item.receiptNumber.toLowerCase().includes(q);
+        const matchesName = (item.name || "").toLowerCase().includes(q);
+        const matchesAddr = (item.address || "").toLowerCase().includes(q);
+        const matchesBay = (item.bayNumber || "").toLowerCase().includes(q);
+        const matchesPlate = (item.plate || "").toLowerCase().includes(q);
+        const matchesReceipt = (item.receiptNumber || "").toLowerCase().includes(q);
         if (!matchesName && !matchesAddr && !matchesBay && !matchesPlate && !matchesReceipt) {
           return false;
         }
@@ -551,7 +561,7 @@ const Activities = () => {
 
             <TouchableOpacity
               style={[styles.idleSecondaryBtn, { backgroundColor: theme.background, borderColor: theme.border }]}
-              onPress={() => router.push("/(tabs)/home")}
+              onPress={() => router.push("/scanner")}
               activeOpacity={0.8}
             >
               <Ionicons name="qr-code-outline" size={15} color={theme.text} />

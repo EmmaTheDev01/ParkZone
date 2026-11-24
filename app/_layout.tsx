@@ -40,6 +40,11 @@ export default function RootLayout() {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!mounted) return;
       setSession(nextSession ?? null);
+      if (event === "PASSWORD_RECOVERY") {
+        setAuthReady(true);
+        router.replace("/(auth)/new_pass");
+        return;
+      }
       if (nextSession?.user && (event === "SIGNED_IN" || event === "USER_UPDATED")) {
         ensureUserProfile(nextSession.user).catch(() => {});
       }
@@ -65,7 +70,9 @@ export default function RootLayout() {
       topSegment === "db_connection";
     const isPasswordRecoveryFlow =
       topSegment === "(auth)" &&
-      (subSegment === "otp_verfied" ||
+      (subSegment === "forgot_pass" ||
+        subSegment === "sign_up" ||
+        subSegment === "otp_verfied" ||
         subSegment === "new_pass" ||
         subSegment === "change_succesfully" ||
         subSegment === "succesfully" ||

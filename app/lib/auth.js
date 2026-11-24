@@ -16,8 +16,8 @@ const normalizeRwandanPhone = (raw) => {
   if (digits.length === 12 && digits.startsWith("2507")) {
     return `+${digits}`;
   }
-  // Also allow international numbers between 10 and 15 digits
-  if (digits.length >= 10 && digits.length <= 15) {
+  // Also allow international numbers between 10 and 15 digits (E.164 cannot start with 0)
+  if (digits.length >= 10 && digits.length <= 15 && !digits.startsWith("0")) {
     return `+${digits}`;
   }
   return null;

@@ -51,8 +51,9 @@ export const GlobalAlert: React.FC = () => {
 
   const handleDismiss = () => {
     if (!config) return;
-    config.onDismiss?.();
+    const onDismiss = config.onDismiss;
     globalAlert.hide();
+    onDismiss?.();
   };
 
   const handleButtonPress = (btn: GlobalAlertButton) => {
@@ -74,7 +75,11 @@ export const GlobalAlert: React.FC = () => {
       visible={!!config}
       animationType="fade"
       statusBarTranslucent
-      onRequestClose={handleDismiss}
+      onRequestClose={() => {
+        if (config.cancelable !== false) {
+          handleDismiss();
+        }
+      }}
     >
       <TouchableWithoutFeedback
         onPress={() => {

@@ -46,31 +46,28 @@ const  calculateEvBilling = (taxRate: number, ratePerKwh: number, parkingFee: nu
     // destroying negative values we wants positive values only
 
 
-    if (taxRate < 1){
-
-        throw new Error(`Invalid input for taxRate: ${taxRate} the value cannot be less than 1`);
+    if (taxRate < 0 || taxRate > 100) {
+        throw new Error(`Invalid input for taxRate: ${taxRate} must be between 0 and 100`);
     }
 
-    if (ratePerKwh === 0){
-        throw new Error(`Invalid input for ratePerKwh: ${ratePerKwh} the value cannot be zero`);
+    if (ratePerKwh <= 0) {
+        throw new Error(`Invalid input for ratePerKwh: ${ratePerKwh} the value must be positive`);
     }
 
-    if (parkingFee < 0){
+    if (parkingFee < 0) {
         throw new Error(`Invalid input for parkingFee: ${parkingFee} the value cannot be negative`);
     }
 
-
-    if (kwhUsed < 0){
+    if (kwhUsed < 0) {
         throw new Error(`Invalid input for kwhUsed: ${kwhUsed} the value cannot be negative`);
     }
 
-
-
     const roundValues = (value: number) => Math.round(value * 100) / 100;
 
-
+    // Support both decimal (e.g. 0.18) and percentage (e.g. 18) tax rates
+    const normalizedTaxRate = taxRate > 1 ? taxRate / 100 : taxRate;
     const energyCost = ratePerKwh * kwhUsed;
-    const taxAmount = energyCost * taxRate;
+    const taxAmount = energyCost * normalizedTaxRate;
 
     const roundedEnergyCost = roundValues(energyCost);
     const roundedTaxAmount = roundValues(taxAmount);
@@ -157,7 +154,7 @@ const SPENDING_LIMITS: Record<AlertPeriod, { parking: number; energy: number }> 
     daily: { parking: 2000, energy: 5000 },
     weekly: { parking: 10000, energy: 25000 },
     monthly: { parking: 40000, energy: 100000 },
-    yearly: { parking: 50000, energy: 2000000 },
+    yearly: { parking: 500000, energy: 2000000 },
 };
 
 const WARNING_RATIO = 0.75;

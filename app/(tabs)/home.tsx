@@ -399,6 +399,16 @@ export default function Home() {
     return () => clearInterval(timer);
   }, [activeTicket]);
 
+  // Handle QR bay handoff from /scanner route
+  const lastHandledScanRef = useRef<string | null>(null);
+  useEffect(() => {
+    const scannedBay = params.scannedBay;
+    if (scannedBay && scannedBay !== lastHandledScanRef.current) {
+      lastHandledScanRef.current = scannedBay;
+      handleBarcodeScanned({ data: scannedBay });
+    }
+  }, [params.scannedBay]);
+
   // Real-time Subscription for Selected Location Parking Spaces
   useEffect(() => {
     if (!selectedLocation?.id) {
@@ -652,11 +662,11 @@ export default function Home() {
     const q = searchQuery.toLowerCase().trim();
     return recentParkingsList.filter(
       (item) =>
-        item.name.toLowerCase().includes(q) ||
-        item.address.toLowerCase().includes(q) ||
-        item.status.toLowerCase().includes(q) ||
-        item.bayNumber.toLowerCase().includes(q) ||
-        item.plate.toLowerCase().includes(q)
+        (item.name || "").toLowerCase().includes(q) ||
+        (item.address || "").toLowerCase().includes(q) ||
+        (item.status || "").toLowerCase().includes(q) ||
+        (item.bayNumber || "").toLowerCase().includes(q) ||
+        (item.plate || "").toLowerCase().includes(q)
     );
   }, [recentParkingsList, searchQuery]);
 
@@ -1246,7 +1256,7 @@ export default function Home() {
     if (!user?.id) {
       Alert.alert("Sign In Required", "Please sign in to start a parking session.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Sign In", onPress: () => router.push("/(auth)/sign-in") },
+        { text: "Sign In", onPress: () => router.push("/(auth)/sign_in") },
       ]);
       return;
     }
@@ -1339,7 +1349,12 @@ export default function Home() {
         plateNumber: activePlate,
         locationId: selectedLocation.id,
         spaceId: selectedSpace.id,
-        reason: fineReason,
+        reason: isEvSpot
+          ? "unauthorized_ev"
+          : selectedSpace.space_type === "handicap"
+          ? "unauthorized_handicap"
+          : "illegal_spot",
+        fineAmount,
       });
     }
 
@@ -1432,10 +1447,14 @@ export default function Home() {
     if (!activeTicket) return;
     const newHours = activeTicket.durationHours + addedHours;
     const newTotal = newHours * (activeTicket.hourlyRate || 300);
-    await supabase
+    const { error } = await supabase
       .from("parking_tickets")
-      .update({ total_amount: newTotal })
+      .update({ total_amount: newTotal, hours_elapsed: newHours })
       .eq("id", activeTicket.id);
+    if (error) {
+      Alert.alert("Extension Failed", error.message || "Could not extend parking time.");
+      return;
+    }
     setActiveTicket((prev) => {
       if (!prev) return null;
       return {
@@ -1487,7 +1506,7 @@ export default function Home() {
     if (!user?.id) {
       Alert.alert("Sign In Required", "Please sign in to start a parking session.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Sign In", onPress: () => router.push("/(auth)/sign-in") },
+        { text: "Sign In", onPress: () => router.push("/(auth)/sign_in") },
       ]);
       return;
     }
@@ -1541,13 +1560,13 @@ export default function Home() {
     const baseCost = (scannedSpaceInfo.hourlyRate || 300) * (durationHours || 2);
     const totalCost = baseCost + fineAmount;
 
-    // Trigger mobile payment in the background for scanned parking check-in
-    initiateMobilePayment(totalCost).catch(() => {});
-
     if (!scannedSpaceInfo.locationId) {
       Alert.alert("Invalid Location", "Scanned bay has no linked parking location.");
       return;
     }
+
+    // Trigger mobile payment in the background for scanned parking check-in
+    initiateMobilePayment(totalCost).catch(() => {});
 
     const exactHours = durationHours || 2;
     const sessionRes = await startParkingSession({
@@ -1584,7 +1603,8 @@ export default function Home() {
         plateNumber: activePlate,
         locationId: scannedSpaceInfo.locationId,
         spaceId: scannedSpaceInfo.spaceId,
-        reason: fineReason,
+        reason: isEvSpot ? "unauthorized_ev" : isHandicapSpot ? "unauthorized_handicap" : "illegal_spot",
+        fineAmount,
       });
     }
 
@@ -1618,7 +1638,7 @@ export default function Home() {
     if (!user?.id) {
       Alert.alert("Sign In Required", "Please sign in to start a parking session.", [
         { text: "Cancel", style: "cancel" },
-        { text: "Sign In", onPress: () => router.push("/(auth)/sign-in") },
+        { text: "Sign In", onPress: () => router.push("/(auth)/sign_in") },
       ]);
       return;
     }
@@ -1633,6 +1653,14 @@ export default function Home() {
     }
 
     const matchedSpace = sheetSpaces.find((s) => s.space_number === selectedSheetBay);
+    if (!matchedSpace) {
+      Alert.alert("Select Spot", "Please select an available parking bay before continuing.");
+      return;
+    }
+    if (matchedSpace.is_occupied) {
+      Alert.alert("Spot Occupied", `Bay ${matchedSpace.space_number} is currently occupied. Please choose an available bay.`);
+      return;
+    }
 
     let fineAmount = 0;
     let fineReason = "";
@@ -1726,7 +1754,7 @@ export default function Home() {
         plateNumber: activePlate,
         locationId: selectedParkForSheet.id,
         spaceId: matchedSpace?.id,
-        reason: fineReason,
+        reason: isEvSpot ? "unauthorized_ev" : isHandicapSpot ? "unauthorized_handicap" : "illegal_spot",
         fineAmount: fineAmount,
       });
     }
@@ -5463,15 +5491,15 @@ export default function Home() {
                     .filter((ev) => {
                       if (!mapSearch) return true;
                       return (
-                        ev.name.toLowerCase().includes(mapSearch.toLowerCase()) ||
-                        ev.address.toLowerCase().includes(mapSearch.toLowerCase())
+                        (ev.name || "").toLowerCase().includes(mapSearch.toLowerCase()) ||
+                        (ev.address || "").toLowerCase().includes(mapSearch.toLowerCase())
                       );
                     })
                     .map((ev) => {
                       const isSelected = selectedMapLocation?.id === ev.id;
-                      const availableChargersCount =
-                        ev.chargers?.filter((c) => c.status === "available").length ||
-                        (ev.chargers?.length ? ev.chargers.length : 4);
+                      const availableChargersCount = ev.chargers
+                        ? ev.chargers.filter((c) => c.status === "available").length
+                        : 4;
                       const evAsLoc: ParkingLocation = {
                         id: ev.id,
                         name: ev.name,
@@ -5949,8 +5977,13 @@ export default function Home() {
                         pathname: "/ev_charging",
                         params: {
                           locationId: selectedMapLocation.id,
-                          bayNumber: "BAY-01",
-                          stationName: selectedMapLocation.name,
+                          bayNumber: "EV-01",
+                          name: selectedMapLocation.name,
+                          plate: selectedVehicle?.plate_number || driverVehicle?.plateNumber || "EV",
+                          powerKw: "60",
+                          soc: String(driverVehicle?.batteryLevelPercent ?? 20),
+                          billAmount: "9000",
+                          isPaid: "true",
                         },
                       });
                     } else {

@@ -71,27 +71,25 @@ export const ParkingSessionModal = ({
     return () => clearInterval(interval);
   }, [visible, session?.status]);
 
-  if (!session) return null;
-
-  const isActive = session.status === "Active";
+  const isActive = session?.status === "Active";
 
   // Parse entry time and calculate elapsed/remaining
   const entryMs = useMemo(() => {
-    if (!session.entryTime) return Date.now() - 15 * 60 * 1000;
+    if (!session?.entryTime) return Date.now() - 15 * 60 * 1000;
     const parsed = new Date(session.entryTime).getTime();
     return isNaN(parsed) ? Date.now() - 15 * 60 * 1000 : parsed;
-  }, [session.entryTime]);
+  }, [session?.entryTime]);
 
   const durationHours = useMemo(() => {
-    if (session.durationHours && session.durationHours > 0) return session.durationHours;
-    if (session.duration) {
+    if (session?.durationHours && session.durationHours > 0) return session.durationHours;
+    if (session?.duration) {
       const match = session.duration.match(/(\d+)\s*h(?:our)?/i);
       if (match) return parseInt(match[1], 10);
       const numMatch = parseFloat(session.duration);
       if (!isNaN(numMatch) && numMatch > 0) return numMatch;
     }
     return 1;
-  }, [session.durationHours, session.duration]);
+  }, [session?.durationHours, session?.duration]);
 
   const totalSeconds = Math.max(1, durationHours * 3600);
   const elapsedSeconds = Math.max(0, Math.floor((currentTick - entryMs) / 1000));
@@ -135,15 +133,17 @@ export const ParkingSessionModal = ({
   const progressAnim = useRef(new Animated.Value(progress)).current;
 
   useEffect(() => {
+    if (!visible || !session) return;
     Animated.timing(progressAnim, {
       toValue: progress,
       duration: 500,
       easing: Easing.out(Easing.quad),
       useNativeDriver: false,
     }).start();
-  }, [progress]);
+  }, [progress, visible, session]);
 
   useEffect(() => {
+    if (!visible || !session) return;
     const pulseLoop = Animated.loop(
       Animated.sequence([
         Animated.parallel([
@@ -178,7 +178,9 @@ export const ParkingSessionModal = ({
     );
     pulseLoop.start();
     return () => pulseLoop.stop();
-  }, [isOverdue]);
+  }, [isOverdue, visible, session]);
+
+  if (!session) return null;
 
   const animatedStrokeDashoffset = progressAnim.interpolate({
     inputRange: [0, 1],

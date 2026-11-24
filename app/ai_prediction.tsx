@@ -73,10 +73,19 @@ export default function AiPredictionScreen() {
     telemetry?.ambientTemperatureC,
   ]);
 
+  const syncNoticeTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (syncNoticeTimerRef.current) clearTimeout(syncNoticeTimerRef.current);
+    };
+  }, []);
+
   const handlePushToCar = () => {
     sendPredictionToCar(prediction);
     setSyncNotice("AI power prediction synced to vehicle system and Android Auto.");
-    setTimeout(() => {
+    if (syncNoticeTimerRef.current) clearTimeout(syncNoticeTimerRef.current);
+    syncNoticeTimerRef.current = setTimeout(() => {
       setSyncNotice(null);
     }, 3500);
   };

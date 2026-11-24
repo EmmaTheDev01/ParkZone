@@ -47,6 +47,7 @@ export interface ThemeColors {
 const THEME_STORAGE_KEY = "@parkzone_theme_pref";
 let currentPreference: ThemePreference = "light";
 let hasLoadedPreference = false;
+let hasUserSetPreference = false;
 const preferenceListeners = new Set<(pref: ThemePreference) => void>();
 
 function notifyThemeListeners(pref: ThemePreference) {
@@ -69,13 +70,16 @@ export function useTheme(): ThemeColors & {
 
     if (!hasLoadedPreference) {
       hasLoadedPreference = true;
-      AsyncStorage.getItem(THEME_STORAGE_KEY).then((saved) => {
-        if (saved === "light" || saved === "dark" || saved === "system") {
-          notifyThemeListeners(saved);
-        } else {
-          notifyThemeListeners("light");
-        }
-      });
+      AsyncStorage.getItem(THEME_STORAGE_KEY)
+        .then((saved) => {
+          if (hasUserSetPreference) return;
+          if (saved === "light" || saved === "dark" || saved === "system") {
+            notifyThemeListeners(saved);
+          } else {
+            notifyThemeListeners("light");
+          }
+        })
+        .catch(() => {});
     }
 
     return () => {
@@ -84,8 +88,9 @@ export function useTheme(): ThemeColors & {
   }, []);
 
   const setThemePreference = (pref: ThemePreference) => {
+    hasUserSetPreference = true;
     notifyThemeListeners(pref);
-    AsyncStorage.setItem(THEME_STORAGE_KEY, pref);
+    AsyncStorage.setItem(THEME_STORAGE_KEY, pref).catch(() => {});
   };
 
   // Light mode is the default unless explicitly set to 'dark' or 'system' with dark OS

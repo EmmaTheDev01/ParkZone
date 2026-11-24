@@ -106,8 +106,14 @@ export default function EvChargingScreen() {
   // Animated progress value
   const progressAnim = useRef(new Animated.Value(0)).current;
 
-  // Notify & persist on session start
+  // Track whether DB session has been created so we never insert duplicate rows
+  const sessionStartedRef = useRef(false);
+
+  // Notify & persist once payment is verified
   useEffect(() => {
+    if (!paymentVerified || sessionStartedRef.current) return;
+    sessionStartedRef.current = true;
+
     const estMins = Math.ceil(totalChargingSeconds / 60);
     notifyChargingStarted({
       vehiclePlate: vehiclePlate || "EV",
@@ -124,14 +130,14 @@ export default function EvChargingScreen() {
       chargerPowerKw,
       initialSoc,
       targetSoc,
-      paymentStatus: paymentVerified ? "paid" : "unpaid",
+      paymentStatus: "paid",
       amountPaid: chargingBill,
     })
       .then((res) => {
         if (res?.data?.id) setChargingSessionId(res.data.id);
       })
       .catch(() => {});
-  }, []);
+  }, [paymentVerified]);
 
   // Timer Tick Interval - only ticks if paid and playing
   useEffect(() => {
@@ -139,14 +145,7 @@ export default function EvChargingScreen() {
 
     const interval = setInterval(() => {
       setElapsedSeconds((prev) => prev + 1);
-      setRemainingSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          handleChargingFinished();
-          return 0;
-        }
-        return prev - 1;
-      });
+      setRemainingSeconds((prev) => (prev <= 1 ? 0 : prev - 1));
 
       // Increment energy & SOC gradually based on charger output
       const kwhPerSec = chargerPowerKw / 3600;
@@ -159,7 +158,7 @@ export default function EvChargingScreen() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isPlaying, chargerPowerKw, batteryCapacityKwh, targetSoc]);
+  }, [isPlaying, paymentVerified, chargerPowerKw, batteryCapacityKwh, targetSoc]);
 
   // Sync circular progress animation with remaining time
   const progress = useMemo(() => {
@@ -181,56 +180,7 @@ export default function EvChargingScreen() {
     outputRange: [circumference, 0],
   });
 
-  // Handle Charging Finished Event (Notification + Voice Alert)
-  const handleChargingFinished = useCallback(() => {
-    if (hasNotifiedCompletion) return;
-    setHasNotifiedCompletion(true);
-    setIsPlaying(false);
-
-    notifyChargingCompleted({
-      vehiclePlate,
-      stationName,
-      reachedSoc: targetSoc,
-      deliveredKwh: Number(deliveredKwh.toFixed(1)),
-    });
-
-    VoiceGuidance.announceChargingCompleted(vehiclePlate, targetSoc, Number(deliveredKwh.toFixed(1)));
-
-    Alert.alert(
-      "Charging Complete",
-      `Your ${vehicleModel} (${vehiclePlate}) charging timer has completed.\n\n• Energy Delivered: ${deliveredKwh.toFixed(1)} kWh (${Math.round(currentSoc)}%)\n• Charging Time: ${Math.max(1, Math.ceil(elapsedSeconds / 60))} min\n• Amount Paid: ${chargingBill.toLocaleString()} ${currency}\n• Parking Fee: 0 ${currency} (Free for EV)\n\nPlease disconnect the charging cable.`,
-      [{ text: "View Receipt", onPress: handleStopAndComplete }]
-    );
-  }, [hasNotifiedCompletion, elapsedSeconds, targetSoc, vehiclePlate, stationName, deliveredKwh, vehicleModel, currency, chargingBill, currentSoc]);
-
-  // Format Digital Time Display (HH:MM:SS or MM:SS) based on remaining seconds
-  const formatTimerDigits = (sec: number) => {
-    const hrs = Math.floor(sec / 3600);
-    const mins = Math.floor((sec % 3600) / 60);
-    const s = sec % 60;
-    if (hrs > 0) {
-      return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-    }
-    return `${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
-
-  const handleSelectExactDuration = (seconds: number) => {
-    setTotalChargingSeconds(seconds);
-    setRemainingSeconds(Math.max(0, seconds - elapsedSeconds));
-    VoiceGuidance.speak(`Charging timer set to ${Math.round(seconds / 60)} minutes.`);
-  };
-
-  const handleReset = () => {
-    setElapsedSeconds(0);
-    setRemainingSeconds(totalChargingSeconds);
-    setDeliveredKwh(0);
-    setCurrentSoc(initialSoc);
-    setHasNotifiedCompletion(false);
-    setIsPlaying(true);
-    VoiceGuidance.speak("Charging timer reset to selected duration.");
-  };
-
-  const handleStopAndComplete = async () => {
+  const handleStopAndComplete = useCallback(async () => {
     setIsPlaying(false);
     const billedMins = Math.max(1, Math.ceil(elapsedSeconds / 60));
 
@@ -273,6 +223,75 @@ export default function EvChargingScreen() {
         isPaid: "true",
       },
     });
+  }, [
+    elapsedSeconds,
+    chargingSessionId,
+    currentSoc,
+    deliveredKwh,
+    chargingBill,
+    vehiclePlate,
+    bayNumber,
+    locationId,
+    stationName,
+    totalChargingSeconds,
+    currency,
+    router,
+  ]);
+
+  // Handle Charging Finished Event (Notification + Voice Alert)
+  const handleChargingFinished = useCallback(() => {
+    if (hasNotifiedCompletion) return;
+    setHasNotifiedCompletion(true);
+    setIsPlaying(false);
+
+    notifyChargingCompleted({
+      vehiclePlate,
+      stationName,
+      reachedSoc: targetSoc,
+      deliveredKwh: Number(deliveredKwh.toFixed(1)),
+    });
+
+    VoiceGuidance.announceChargingCompleted(vehiclePlate, targetSoc, Number(deliveredKwh.toFixed(1)));
+
+    Alert.alert(
+      "Charging Complete",
+      `Your ${vehicleModel} (${vehiclePlate}) charging timer has completed.\n\n• Energy Delivered: ${deliveredKwh.toFixed(1)} kWh (${Math.round(currentSoc)}%)\n• Charging Time: ${Math.max(1, Math.ceil(elapsedSeconds / 60))} min\n• Amount Paid: ${chargingBill.toLocaleString()} ${currency}\n• Parking Fee: 0 ${currency} (Free for EV)\n\nPlease disconnect the charging cable.`,
+      [{ text: "View Receipt", onPress: handleStopAndComplete }]
+    );
+  }, [hasNotifiedCompletion, elapsedSeconds, targetSoc, vehiclePlate, stationName, deliveredKwh, vehicleModel, currency, chargingBill, currentSoc, handleStopAndComplete]);
+
+  // Trigger completion side effect cleanly when countdown reaches 0
+  useEffect(() => {
+    if (remainingSeconds === 0 && paymentVerified && !hasNotifiedCompletion) {
+      handleChargingFinished();
+    }
+  }, [remainingSeconds, paymentVerified, hasNotifiedCompletion, handleChargingFinished]);
+
+  // Format Digital Time Display (HH:MM:SS or MM:SS) based on remaining seconds
+  const formatTimerDigits = (sec: number) => {
+    const hrs = Math.floor(sec / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+    return `${mins.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const handleSelectExactDuration = (seconds: number) => {
+    setTotalChargingSeconds(seconds);
+    setRemainingSeconds(Math.max(0, seconds - elapsedSeconds));
+    VoiceGuidance.speak(`Charging timer set to ${Math.round(seconds / 60)} minutes.`);
+  };
+
+  const handleReset = () => {
+    setElapsedSeconds(0);
+    setRemainingSeconds(totalChargingSeconds);
+    setDeliveredKwh(0);
+    setCurrentSoc(initialSoc);
+    setHasNotifiedCompletion(false);
+    setIsPlaying(true);
+    VoiceGuidance.speak("Charging timer reset to selected duration.");
   };
 
   const activeColor = theme.evGreen;
@@ -339,21 +358,6 @@ export default function EvChargingScreen() {
                 setPaymentVerified(true);
                 setIsPlaying(true);
                 setIsProcessingPayment(false);
-                startEvChargingSession({
-                  locationId: locationId || undefined,
-                  chargerId: chargerId || undefined,
-                  vehiclePlate: vehiclePlate || "EV",
-                  bayNumber,
-                  chargerPowerKw,
-                  initialSoc,
-                  targetSoc,
-                  paymentStatus: "paid",
-                  amountPaid: chargingBill,
-                })
-                  .then((res) => {
-                    if (res?.data?.id) setChargingSessionId(res.data.id);
-                  })
-                  .catch(() => {});
               }}
               disabled={isProcessingPayment}
               activeOpacity={0.88}

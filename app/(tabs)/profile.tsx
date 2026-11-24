@@ -213,20 +213,21 @@ const Profile = () => {
 
       if (user) {
         let prof: any = null;
-        try {
-          const { data } = await supabase
-            .from("profiles")
-            .select("id, phone_number, full_name, email, avatar_url, emergency_contact, created_at")
-            .eq("id", user.id)
-            .maybeSingle();
-          prof = data;
-        } catch {
-          const { data } = await supabase
+        const { data: fullProf, error: fullProfErr } = await supabase
+          .from("profiles")
+          .select("id, phone_number, full_name, email, avatar_url, emergency_contact, created_at")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!fullProfErr) {
+          prof = fullProf;
+        } else {
+          const { data: basicProf } = await supabase
             .from("profiles")
             .select("id, phone_number, full_name, email, avatar_url, created_at")
             .eq("id", user.id)
             .maybeSingle();
-          prof = data;
+          prof = basicProf;
         }
 
         const resolvedAvatar = prof?.avatar_url || user.user_metadata?.avatar_url || null;
@@ -328,7 +329,7 @@ const Profile = () => {
 
         if (upsertErr) {
           // Schema fallback if emergency_contact column not present
-          await supabase.from("profiles").upsert(
+          const { error: fallbackErr } = await supabase.from("profiles").upsert(
             {
               id: user.id,
               full_name: editFullName.trim(),
@@ -339,6 +340,9 @@ const Profile = () => {
             },
             { onConflict: "id" }
           );
+          if (fallbackErr) {
+            throw fallbackErr;
+          }
         }
 
         // Sync auth metadata

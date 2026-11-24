@@ -162,8 +162,11 @@ export async function syncWithActiveVehicle(): Promise<void> {
 /**
  * Starts actual device GPS tracking to provide real vehicle speed, coordinates, altitude, and heading
  */
+let isStartingGps = false;
+
 export async function startRealGpsTelemetry(): Promise<void> {
-  if (locationWatcher) return;
+  if (locationWatcher || isStartingGps) return;
+  isStartingGps = true;
 
   try {
     const { status } = await Location.requestForegroundPermissionsAsync();
@@ -219,7 +222,10 @@ export async function startRealGpsTelemetry(): Promise<void> {
         });
       }
     );
-  } catch (_) {}
+  } catch (_) {
+  } finally {
+    isStartingGps = false;
+  }
 }
 
 export function stopRealGpsTelemetry(): void {
@@ -336,17 +342,23 @@ onCarDataUpdate((data: CarTelemetryPayload) => {
   if (data.batteryCapacity > 0) {
     updates.batteryCapacityKwh = Number(data.batteryCapacity.toFixed(1));
   }
-  if (data.speed > 0) {
+  if (typeof data.speed === "number" && data.speed >= 0) {
     updates.speedKmH = Math.round(data.speed);
   }
-  if (data.chargingPowerKw > 0) {
-    updates.chargingPowerKw = Number(data.chargingPowerKw.toFixed(1));
-  }
-  if (data.voltage > 0) {
-    updates.chargingVoltageV = Math.round(data.voltage);
-  }
-  if (data.current > 0) {
-    updates.chargingCurrentA = Number(data.current.toFixed(1));
+  if (data.charging) {
+    if (typeof data.chargingPowerKw === "number" && data.chargingPowerKw >= 0) {
+      updates.chargingPowerKw = Number(data.chargingPowerKw.toFixed(1));
+    }
+    if (typeof data.voltage === "number" && data.voltage >= 0) {
+      updates.chargingVoltageV = Math.round(data.voltage);
+    }
+    if (typeof data.current === "number" && data.current >= 0) {
+      updates.chargingCurrentA = Number(data.current.toFixed(1));
+    }
+  } else {
+    updates.chargingPowerKw = 0;
+    updates.chargingVoltageV = 0;
+    updates.chargingCurrentA = 0;
   }
 
   updates.chargingStatus = data.charging ? "charging" : "idle";
@@ -456,9 +468,9 @@ export function calculatePowerPrediction(params: PredictionInput): PredictionRes
   let recommendedStopsCount = 0;
   let recommendedChargingMinutes = 0;
   if (!isReachableWithoutStop) {
-    const deficitKwh = totalEnergyRequiredKwh - availableKwh + 10;
-    recommendedStopsCount = Math.ceil(deficitKwh / 30);
-    recommendedChargingMinutes = Math.round((deficitKwh / 60) * 60);
+    const deficitKwh = Math.max(1, totalEnergyRequiredKwh - availableKwh + 10);
+    recommendedStopsCount = Math.max(1, Math.ceil(deficitKwh / 30));
+    recommendedChargingMinutes = Math.max(5, Math.round((deficitKwh / 60) * 60));
   }
 
   // AI-generated route optimization insights
@@ -552,9 +564,8 @@ export function sendPredictionToCar(prediction: PredictionResult): void {
   });
 }
 
-// Automatically sync vehicle profile and initiate GPS tracking
+// Sync vehicle profile on load; GPS tracking is started on-demand by active HUD/navigation screens
 syncWithActiveVehicle();
-startRealGpsTelemetry();
 
 // Default export satisfying Expo Router automatic discovery
 export default function CarTelemetryService() {

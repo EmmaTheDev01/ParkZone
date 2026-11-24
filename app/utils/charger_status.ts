@@ -15,20 +15,7 @@ export interface CarTelemetryPayload {
 
 let WebSocketServer: any = null;
 let WebSocketClient: any = typeof WebSocket !== "undefined" ? WebSocket : null;
-
-try {
-  const wsModule = require("ws");
-  if (wsModule) {
-    WebSocketServer = wsModule.WebSocketServer || null;
-    if (wsModule.WebSocket) {
-      WebSocketClient = wsModule.WebSocket;
-    }
-  }
-} catch (_) {
-  // Mobile React Native environment: ws native server package is not present
-}
-
-const wss = WebSocketServer ? new WebSocketServer({ port: 8080 }) : null;
+const wss: any = null;
 
 // Ping chargers for status updates
 const foundChargers: any[] = [];

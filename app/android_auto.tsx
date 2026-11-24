@@ -22,6 +22,8 @@ import {
   connectCarViaWebSocket,
   disconnectCarWebSocket,
   setAndroidAutoConnected,
+  startRealGpsTelemetry,
+  stopRealGpsTelemetry,
 } from "./services/carTelemetry";
 import {
   nearbyDevices,
@@ -31,7 +33,7 @@ import {
 const { width } = Dimensions.get("window");
 
 function formatCompassHeading(heading: number): string {
-  if (heading <= 0 || heading > 360) return "--";
+  if (heading < 0 || heading > 360 || Number.isNaN(heading)) return "--";
   const cardinals = [
     "North",
     "North-East",
@@ -60,12 +62,14 @@ export default function AndroidAutoScreen() {
   const [bluetoothError, setBluetoothError] = useState<string | null>(null);
 
   useEffect(() => {
+    startRealGpsTelemetry();
     const unsubscribe = subscribeCarTelemetry((data) => {
       setTelemetry(data);
     });
 
     return () => {
       unsubscribe();
+      stopRealGpsTelemetry();
     };
   }, []);
 

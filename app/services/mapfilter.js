@@ -28,7 +28,8 @@ async function getNearbyLocations (latitude, longitude){
                 return nearby;
             }
             catch (error) {
-                return "Error encountered: " + error.message;
+                console.warn("getNearbyLocations error:", error?.message || error);
+                return [];
             }
         
 
@@ -70,7 +71,8 @@ async function getHandicapLocations (latitude, longitude){
         return nearby;
     }
     catch (error) {
-        return "Error encountered: " + error.message;
+        console.warn("mapfilter location query error:", error?.message || error);
+        return [];
     }
 
 }
@@ -113,7 +115,8 @@ async function getChargingStationLocations (latitude, longitude){
         return nearby;
     }
     catch (error) {
-        return "Error encountered: " + error.message;
+        console.warn("mapfilter location query error:", error?.message || error);
+        return [];
     }
 
 }

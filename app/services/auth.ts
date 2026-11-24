@@ -390,9 +390,10 @@ export const verifyRecoveryOtp = async (identifier: string, token: string) => {
         const { data: resolvedEmail } = await supabase.rpc("resolve_login_email_by_phone", {
             p_phone: normalizedPhone,
         });
-        if (resolvedEmail && typeof resolvedEmail === "string") {
-            normalizedEmail = resolvedEmail.trim().toLowerCase();
+        if (!resolvedEmail || typeof resolvedEmail !== "string") {
+            throw new Error("Could not find an account associated with that phone number.");
         }
+        normalizedEmail = resolvedEmail.trim().toLowerCase();
     }
 
     const { data, error } = await supabase.auth.verifyOtp({

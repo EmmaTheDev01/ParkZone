@@ -117,6 +117,7 @@ export default function ForgotPassword() {
   };
 
   const handleVerify = async () => {
+    if (isLocked) return;
     const token = otp.join("");
     if (token.length < 6) {
       setOtpErrorMsg("Please enter all 6 digits.");
@@ -356,7 +357,7 @@ export default function ForgotPassword() {
                     onChangeText={(t) => handleChangeText(t, idx)}
                     onKeyPress={(e) => handleKeyPress(e, idx)}
                     keyboardType="number-pad"
-                    maxLength={1}
+                    maxLength={6 - idx}
                     style={[
                       styles.otpBox,
                       {
@@ -371,9 +372,9 @@ export default function ForgotPassword() {
 
               {/* Verify Button */}
               <TouchableOpacity
-                style={[styles.modalPrimaryBtn, { backgroundColor: theme.primaryBtnBg }]}
+                style={[styles.modalPrimaryBtn, { backgroundColor: theme.primaryBtnBg, opacity: isLocked ? 0.5 : 1 }]}
                 onPress={handleVerify}
-                disabled={isLoading}
+                disabled={isLoading || isLocked}
               >
                 {isLoading ? (
                   <ActivityIndicator color={theme.primaryBtnText} />

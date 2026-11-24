@@ -43,10 +43,13 @@ const Vehicles = () => {
     // Hide tab bar when modal is open
     useEffect(() => {
         if (modalVisible) {
-            navigation.getParent()?.setOptions({ tabBarStyle: { display: "none" } });
+            navigation.setOptions({ tabBarStyle: { display: "none" } });
         } else {
-            navigation.getParent()?.setOptions({ tabBarStyle: undefined });
+            navigation.setOptions({ tabBarStyle: undefined });
         }
+        return () => {
+            navigation.setOptions({ tabBarStyle: undefined });
+        };
     }, [modalVisible, navigation]);
 
     // Form State
@@ -169,8 +172,16 @@ const Vehicles = () => {
                     text: "Delete",
                     style: "destructive",
                     onPress: async () => {
-                        await deleteVehicle(vehicleId);
-                        setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+                        try {
+                            const res = await deleteVehicle(vehicleId);
+                            if (res?.error) {
+                                Alert.alert("Delete Failed", res.error.message || "Could not delete vehicle.");
+                                return;
+                            }
+                            setVehicles((prev) => prev.filter((v) => v.id !== vehicleId));
+                        } catch (err: any) {
+                            Alert.alert("Delete Error", err?.message || "Could not delete vehicle.");
+                        }
                     },
                 },
             ]

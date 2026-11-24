@@ -59,10 +59,15 @@ export default function ParkingSessionScreen() {
 
   // Session state initialized from route params and synced with database
   const [session, setSession] = useState<ParkingSessionDetails>(() => {
-    const rawCost = params.cost ? Number(params.cost) : 0;
-    const rawFine = params.violationFine ? Number(params.violationFine) : undefined;
-    const rawHours = params.durationHours ? Number(params.durationHours) : undefined;
-    const rawRate = params.hourlyRate ? Number(params.hourlyRate) : undefined;
+    const parseFinite = (val: unknown): number | undefined => {
+      if (val === undefined || val === null || val === "") return undefined;
+      const n = Number(val);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const rawCost = parseFinite(params.cost) ?? 0;
+    const rawFine = parseFinite(params.violationFine);
+    const rawHours = parseFinite(params.durationHours);
+    const rawRate = parseFinite(params.hourlyRate);
 
     return {
       id: (params.id as string) || "",
@@ -333,9 +338,14 @@ export default function ParkingSessionScreen() {
         .eq("id", session.id);
     }
 
+    const newExitTimeStr = new Date(entryMs + newHours * 3600 * 1000).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     Alert.alert(
       "Parking Extended",
-      `Your session in Slot ${session.bayNumber} has been extended by 1 hour (+${derivedRate.toLocaleString()} ${session.currency || "RWF"}).\nPayment initiated in the background.\nNew departure time: ${exitTimeStr}`,
+      `Your session in Slot ${session.bayNumber} has been extended by 1 hour (+${derivedRate.toLocaleString()} ${session.currency || "RWF"}).\nPayment initiated in the background.\nNew departure time: ${newExitTimeStr}`,
       [{ text: "OK" }]
     );
   };

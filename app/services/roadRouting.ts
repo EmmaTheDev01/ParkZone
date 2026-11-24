@@ -107,9 +107,10 @@ export async function fetchRealRoadRoute(
     isRealRoad: false,
   };
 
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4500);
+    timeoutId = setTimeout(() => controller.abort(), 4500);
 
     const url = `https://router.project-osrm.org/route/v1/driving/${start.longitude},${start.latitude};${end.longitude},${end.latitude}?overview=full&geometries=geojson`;
 
@@ -119,8 +120,6 @@ export async function fetchRealRoadRoute(
         Accept: "application/json",
       },
     });
-
-    clearTimeout(timeoutId);
 
     if (res.ok) {
       const data = await res.json();
@@ -156,9 +155,10 @@ export async function fetchRealRoadRoute(
     }
   } catch {
     // Network or timeout, fallback gracefully
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
   }
 
-  memoryCache.set(cacheKey, fallbackResult);
   return fallbackResult;
 }
 

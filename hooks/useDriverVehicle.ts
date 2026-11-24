@@ -115,6 +115,7 @@ export async function broadcastVehicleChange(updated: DriverVehicleSpecs) {
       }
     } else {
       await AsyncStorage.removeItem("@parkzone_cached_vehicle");
+      await AsyncStorage.removeItem("@parkzone_active_vehicle_id");
     }
   } catch {}
   listeners.forEach((fn) => fn(updated));
@@ -178,6 +179,19 @@ export async function reloadDriverVehicle(): Promise<DriverVehicleSpecs> {
   }
 }
 
+let authListenerRegistered = false;
+function ensureVehicleAuthListener() {
+  if (authListenerRegistered) return;
+  authListenerRegistered = true;
+  supabase.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "TOKEN_REFRESHED") {
+      reloadDriverVehicle();
+    } else if (event === "SIGNED_OUT") {
+      broadcastVehicleChange(EMPTY_VEHICLE_SPECS);
+    }
+  });
+}
+
 export function useDriverVehicle() {
   const [vehicle, setVehicleState] = useState<DriverVehicleSpecs>(cachedVehicle);
   const [isLoaded, setIsLoaded] = useState(isInitialized);
@@ -205,6 +219,7 @@ export function useDriverVehicle() {
   }, []);
 
   useEffect(() => {
+    ensureVehicleAuthListener();
     loadFromDatabase();
 
     const handler: VehicleChangeListener = (updated) => {
@@ -213,18 +228,8 @@ export function useDriverVehicle() {
 
     listeners.add(handler);
 
-    // Also listen to auth changes so vehicle synchronizes on login / logout
-    const { data: authSubscription } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "TOKEN_REFRESHED") {
-        reloadDriverVehicle();
-      } else if (event === "SIGNED_OUT") {
-        broadcastVehicleChange(EMPTY_VEHICLE_SPECS);
-      }
-    });
-
     return () => {
       listeners.delete(handler);
-      authSubscription?.subscription?.unsubscribe();
     };
   }, [loadFromDatabase]);
 
@@ -269,8 +274,8 @@ export function useDriverVehicle() {
       color: updated.colorVariant,
       body_style: updated.bodyStyle,
       plug_type: updated.plugType,
-      battery_capacity_kwh: updated.batteryCapacityKwh || 0,
-      battery_level_percent: updated.batteryLevelPercent || 100,
+      battery_capacity_kwh: updated.batteryCapacityKwh ?? 0,
+      battery_level_percent: updated.batteryLevelPercent ?? 100,
     };
 
     let data: any = null;
@@ -322,6 +327,8 @@ export function useDriverVehicle() {
         const corePayload: Record<string, any> = {
           user_id: user.id,
           plate_number: rawPlate,
+          plate_hash: hashLicensePlate(rawPlate),
+          masked_plate: maskLicensePlate(rawPlate),
           vehicle_type: dbVehicleType,
           color: updated.colorVariant,
         };

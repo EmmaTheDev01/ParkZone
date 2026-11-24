@@ -138,16 +138,20 @@ export default function TransactionDetailsScreen() {
 
       try {
         if (searchId) {
+          const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(searchId);
+
           // 1. Query parking_tickets
-          const { data: ticket } = await supabase
+          let ticketQuery = supabase
             .from("parking_tickets")
             .select(`
               *,
               parking_locations:location_id (*),
               parking_spaces:space_id (*)
-            `)
-            .or(`id.eq.${searchId},ticket_number.eq.${searchId}`)
-            .maybeSingle();
+            `);
+          ticketQuery = isUuid
+            ? ticketQuery.or(`id.eq.${searchId},ticket_number.eq.${searchId}`)
+            : ticketQuery.eq("ticket_number", searchId);
+          const { data: ticket } = await ticketQuery.maybeSingle();
 
           if (ticket) {
             const loc = Array.isArray(ticket.parking_locations)
@@ -161,7 +165,11 @@ export default function TransactionDetailsScreen() {
             const diffMins = Math.max(1, Math.round((exitDate.getTime() - entryDate.getTime()) / 60000));
             const bookedHours = ticket.hours_elapsed || 1;
             const elapsedHours = diffMins / 60;
-            const isOverdue = ticket.status === "overdue" || elapsedHours > bookedHours;
+            const isSettled =
+              ticket.status === "completed" ||
+              ticket.status === "cancelled" ||
+              ticket.payment_status === "paid";
+            const isOverdue = !isSettled && (ticket.status === "overdue" || elapsedHours > bookedHours);
 
             foundRecord = {
               id: ticket.id,
@@ -192,14 +200,16 @@ export default function TransactionDetailsScreen() {
 
           // 2. Query ev_charging_sessions if not found
           if (!foundRecord) {
-            const { data: evSession } = await supabase
+            let evQuery = supabase
               .from("ev_charging_sessions")
               .select(`
                 *,
                 parking_locations:location_id (*)
-              `)
-              .or(`id.eq.${searchId},session_number.eq.${searchId}`)
-              .maybeSingle();
+              `);
+            evQuery = isUuid
+              ? evQuery.or(`id.eq.${searchId},session_number.eq.${searchId}`)
+              : evQuery.eq("session_number", searchId);
+            const { data: evSession } = await evQuery.maybeSingle();
 
             if (evSession) {
               const loc = Array.isArray(evSession.parking_locations)
@@ -238,15 +248,17 @@ export default function TransactionDetailsScreen() {
 
           // 3. Query parking_fines if not found
           if (!foundRecord) {
-            const { data: fine } = await supabase
+            let fineQuery = supabase
               .from("parking_fines")
               .select(`
                 *,
                 parking_locations:location_id (*),
                 parking_spaces:space_id (*)
-              `)
-              .or(`id.eq.${searchId},fine_number.eq.${searchId}`)
-              .maybeSingle();
+              `);
+            fineQuery = isUuid
+              ? fineQuery.or(`id.eq.${searchId},fine_number.eq.${searchId}`)
+              : fineQuery.eq("fine_number", searchId);
+            const { data: fine } = await fineQuery.maybeSingle();
 
             if (fine) {
               const loc = Array.isArray(fine.parking_locations)

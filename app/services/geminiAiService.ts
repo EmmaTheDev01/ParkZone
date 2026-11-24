@@ -4,7 +4,7 @@
 
 import { PredictionInput, PredictionResult, CarTelemetry } from "./carTelemetry";
 
-const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GEMINI_API_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 /**
  * Checks if a Gemini API key is configured in the environment
@@ -67,7 +67,7 @@ Respond ONLY with a JSON object in this exact format:
   "maxCruisingRangeKm": number,
   "bufferMarginKm": number,
   "isReachableWithoutStop": boolean,
-  "recommendedStopsCount": number,
+  "recommendedStopsCount": number, 
   "recommendedChargingMinutes": number,
   "aiInsights": [string, string, string]
 }
@@ -89,22 +89,40 @@ Respond ONLY with a JSON object in this exact format:
         const json = await response.json();
         const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (candidateText) {
-          const parsed: GeminiPredictionResponse = JSON.parse(candidateText);
-          return {
-            predictedPowerPerDistanceWhPerKm: parsed.predictedPowerPerDistanceWhPerKm,
-            totalEnergyRequiredKwh: parsed.totalEnergyRequiredKwh,
-            estimatedSocAtArrivalPct: parsed.estimatedSocAtArrivalPct,
-            maxCruisingRangeKm: parsed.maxCruisingRangeKm,
-            bufferMarginKm: parsed.bufferMarginKm,
-            isReachableWithoutStop: parsed.isReachableWithoutStop,
-            recommendedStopsCount: parsed.recommendedStopsCount,
-            recommendedChargingMinutes: parsed.recommendedChargingMinutes,
-            aerodynamicLossWhPerKm: Math.round(parsed.predictedPowerPerDistanceWhPerKm * 0.45),
-            rollingLossWhPerKm: Math.round(parsed.predictedPowerPerDistanceWhPerKm * 0.35),
-            elevationLossWhPerKm: Math.round(parsed.predictedPowerPerDistanceWhPerKm * 0.1),
-            auxiliaryLossWhPerKm: Math.round(parsed.predictedPowerPerDistanceWhPerKm * 0.1),
-            aiInsights: parsed.aiInsights || [],
-          };
+          const parsed: Partial<GeminiPredictionResponse> = JSON.parse(candidateText);
+          const whPerKm = Number(parsed.predictedPowerPerDistanceWhPerKm);
+          const totalEnergy = Number(parsed.totalEnergyRequiredKwh);
+          const arrivalSoc = Number(parsed.estimatedSocAtArrivalPct);
+          const maxRange = Number(parsed.maxCruisingRangeKm);
+          const bufferMargin = Number(parsed.bufferMarginKm);
+          const stopsCount = Number(parsed.recommendedStopsCount);
+          const chargeMins = Number(parsed.recommendedChargingMinutes);
+
+          if (
+            Number.isFinite(whPerKm) &&
+            whPerKm > 0 &&
+            Number.isFinite(totalEnergy) &&
+            Number.isFinite(arrivalSoc) &&
+            Number.isFinite(maxRange)
+          ) {
+            return {
+              predictedPowerPerDistanceWhPerKm: whPerKm,
+              totalEnergyRequiredKwh: totalEnergy,
+              estimatedSocAtArrivalPct: Math.min(100, Math.max(0, arrivalSoc)),
+              maxCruisingRangeKm: Math.max(0, maxRange),
+              bufferMarginKm: Number.isFinite(bufferMargin) ? bufferMargin : 0,
+              isReachableWithoutStop: Boolean(parsed.isReachableWithoutStop),
+              recommendedStopsCount: Number.isFinite(stopsCount) ? Math.max(0, stopsCount) : 0,
+              recommendedChargingMinutes: Number.isFinite(chargeMins) ? Math.max(0, chargeMins) : 0,
+              aerodynamicLossWhPerKm: Math.round(whPerKm * 0.45),
+              rollingLossWhPerKm: Math.round(whPerKm * 0.35),
+              elevationLossWhPerKm: Math.round(whPerKm * 0.1),
+              auxiliaryLossWhPerKm: Math.round(whPerKm * 0.1),
+              aiInsights: Array.isArray(parsed.aiInsights)
+                ? parsed.aiInsights.filter((s): s is string => typeof s === "string")
+                : [],
+            };
+          }
         }
       }
     } catch (_) {
@@ -170,7 +188,14 @@ Respond ONLY with JSON:
         const json = await response.json();
         const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (candidateText) {
-          return JSON.parse(candidateText);
+          const parsed = JSON.parse(candidateText);
+          const matched = locations.find((l) => l.id === parsed?.recommendedLocationId);
+          if (matched && typeof parsed?.rationale === "string") {
+            return {
+              recommendedLocationId: matched.id,
+              rationale: parsed.rationale,
+            };
+          }
         }
       }
     } catch (_) {}

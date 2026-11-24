@@ -133,24 +133,26 @@ const Payments = () => {
 
   // Real-time Subscriptions for wallet balance and transactions
   useEffect(() => {
-    let userSubId: string | null = null;
+    let cancelled = false;
+    let walletChannel: ReturnType<typeof supabase.channel> | null = null;
+    let ticketChannel: ReturnType<typeof supabase.channel> | null = null;
+    let evChannel: ReturnType<typeof supabase.channel> | null = null;
 
     (async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user?.id) return;
-      userSubId = user.id;
+      if (!user?.id || cancelled) return;
 
-      // Listen to wallet balance updates on user_profiles
-      const walletChannel = supabase
+      // Listen to wallet balance updates on profiles
+      walletChannel = supabase
         .channel(`realtime-wallet-${user.id}`)
         .on(
           "postgres_changes",
           {
             event: "UPDATE",
             schema: "public",
-            table: "user_profiles",
+            table: "profiles",
             filter: `id=eq.${user.id}`,
           },
           (payload) => {
@@ -165,7 +167,7 @@ const Payments = () => {
         .subscribe();
 
       // Listen to parking_tickets changes in real time
-      const ticketChannel = supabase
+      ticketChannel = supabase
         .channel(`realtime-tickets-${user.id}`)
         .on(
           "postgres_changes",
@@ -182,7 +184,7 @@ const Payments = () => {
         .subscribe();
 
       // Listen to ev_charging_sessions changes in real time
-      const evChannel = supabase
+      evChannel = supabase
         .channel(`realtime-ev-${user.id}`)
         .on(
           "postgres_changes",
@@ -197,13 +199,14 @@ const Payments = () => {
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(walletChannel);
-        supabase.removeChannel(ticketChannel);
-        supabase.removeChannel(evChannel);
-      };
     })();
+
+    return () => {
+      cancelled = true;
+      if (walletChannel) supabase.removeChannel(walletChannel);
+      if (ticketChannel) supabase.removeChannel(ticketChannel);
+      if (evChannel) supabase.removeChannel(evChannel);
+    };
   }, [loadBilling]);
 
   const onRefresh = async () => {
@@ -329,25 +332,27 @@ const Payments = () => {
               await initiateMobilePayment(payableAmount);
 
               // 2. Mark completed/paid in database in real time
+              let updateErr: any = null;
               if (item.receiptNumber?.startsWith("FN-") || item.violationFine) {
-                await supabase
+                const { error } = await supabase
                   .from("parking_fines")
                   .update({
                     payment_status: "paid",
                     paid_at: new Date().toISOString(),
                   })
                   .eq("id", item.id);
+                updateErr = error;
               } else if (item.receiptNumber?.startsWith("EV-")) {
-                await supabase
+                const { error } = await supabase
                   .from("ev_charging_sessions")
                   .update({
                     status: "completed",
-                    payment_status: "paid",
                     completed_at: new Date().toISOString(),
                   })
                   .eq("id", item.id);
+                updateErr = error;
               } else {
-                await supabase
+                const { error } = await supabase
                   .from("parking_tickets")
                   .update({
                     status: "completed",
@@ -355,6 +360,15 @@ const Payments = () => {
                     amount_paid: payableAmount,
                   })
                   .eq("id", item.id);
+                updateErr = error;
+              }
+
+              if (updateErr) {
+                Alert.alert(
+                  "Update Failed",
+                  updateErr.message || "Could not update payment status. Please try again."
+                );
+                return;
               }
 
               await loadBilling();
@@ -536,7 +550,7 @@ const Payments = () => {
                           name={
                             tx.duration === "Citation"
                               ? "warning-outline"
-                              : tx.bayNumber.toLowerCase().includes("ev")
+                              : (tx.bayNumber || "").toLowerCase().includes("ev")
                               ? "flash-outline"
                               : "car-outline"
                           }

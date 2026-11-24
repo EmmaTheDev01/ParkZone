@@ -20,13 +20,18 @@ if (supabaseUrl && !supabaseUrl.startsWith("http://") && !supabaseUrl.startsWith
 
 const monitoredFetch: typeof fetch = async (input, init) => {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+    }, 12000);
 
+    const onExternalAbort = () => controller.abort();
     if (init?.signal) {
         if (init.signal.aborted) {
             controller.abort();
         } else {
-            init.signal.addEventListener("abort", () => controller.abort());
+            init.signal.addEventListener("abort", onExternalAbort);
         }
     }
 
@@ -35,13 +40,18 @@ const monitoredFetch: typeof fetch = async (input, init) => {
             ...init,
             signal: controller.signal,
         });
-        clearTimeout(timeoutId);
         reportNetworkSuccess();
         return response;
     } catch (err) {
-        clearTimeout(timeoutId);
-        reportNetworkFailure(err);
+        // Only report a network failure if it was a timeout or genuine network error,
+        // not a caller-initiated cancellation.
+        if (timedOut || !init?.signal?.aborted) {
+            reportNetworkFailure(err);
+        }
         throw err;
+    } finally {
+        clearTimeout(timeoutId);
+        init?.signal?.removeEventListener("abort", onExternalAbort);
     }
 };
 

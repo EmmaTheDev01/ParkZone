@@ -46,11 +46,12 @@ export const DynamicIslandParking: React.FC<DynamicIslandParkingProps> = ({
         bayNumber || "-",
         locationName || "ParkZone Parking",
         plate || "",
-        totalSeconds || 3600,
-        remainingSeconds || 3600
+        totalSeconds ?? 3600,
+        remainingSeconds ?? 3600
       );
     } else if (!active && prevActiveRef.current) {
       // Session ended -> Dismiss native Dynamic Island Activity
+      lastUpdatedSecRef.current = -1;
       endParkingActivity();
     }
 

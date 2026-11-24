@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -38,13 +39,21 @@ export const EvBayDetailModal: React.FC<Props> = ({
 
   const [details, setDetails] = useState<ChargerBayDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    setDetails(null);
+    setLoadError(null);
     setLoading(true);
     fetchChargerBayDetails({ locationId, space, chargers })
       .then((res: ChargerBayDetails) => {
         if (active) setDetails(res);
+      })
+      .catch((err: any) => {
+        if (active) {
+          setLoadError(err?.message || "Could not load live charger telemetry.");
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -144,8 +153,15 @@ export const EvBayDetailModal: React.FC<Props> = ({
               Connecting to live charger telemetry...
             </Text>
           </View>
+        ) : loadError ? (
+          <View style={{ paddingVertical: 28, alignItems: "center", gap: 8 }}>
+            <Ionicons name="alert-circle-outline" size={28} color={theme.danger} />
+            <Text style={{ fontSize: 13, color: theme.textSecondary, textAlign: "center" }}>
+              {loadError}
+            </Text>
+          </View>
         ) : details ? (
-          <View>
+          <ScrollView showsVerticalScrollIndicator={false} bounces={false}>
             {/* OCCUPIED / CURRENTLY CHARGING STATE */}
             {details.isOccupied ? (
               <View style={styles.occupiedBlock}>
@@ -389,7 +405,7 @@ export const EvBayDetailModal: React.FC<Props> = ({
                 )}
               </View>
             )}
-          </View>
+          </ScrollView>
         ) : null}
       </View>
     </View>

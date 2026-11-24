@@ -18,14 +18,6 @@ const { width } = Dimensions.get("window");
 const cardWidth = Math.min(width * 0.78, 310);
 const cardHeight = 230;
 
-// High-resolution photography of modern parking infrastructure & EV grids
-const DEFAULT_HERO_TOP =
-  "https://images.unsplash.com/photo-1506521781263-d8422e82f27a?auto=format&fit=crop&w=800&q=80";
-const DEFAULT_HERO_MID =
-  "https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=800&q=80";
-const DEFAULT_HERO_BACK =
-  "https://images.unsplash.com/photo-1573348722427-f1d6819fdf98?auto=format&fit=crop&w=800&q=80";
-
 export default function WelcomePage() {
   const router = useRouter();
   const theme = useTheme();
@@ -47,6 +39,7 @@ export default function WelcomePage() {
 
   const topLocation = liveLocations[0] || null;
   const midLocation = liveLocations[1] || liveLocations[0] || null;
+  const backLocation = liveLocations[2] || midLocation;
 
   return (
     <GlassBackground>
@@ -88,11 +81,13 @@ export default function WelcomePage() {
               },
             ]}
           >
-            <Image
-              source={{ uri: DEFAULT_HERO_BACK }}
-              style={styles.cardCoverImage}
-              resizeMode="cover"
-            />
+            {backLocation?.image_url ? (
+              <Image
+                source={{ uri: backLocation.image_url }}
+                style={styles.cardCoverImage}
+                resizeMode="cover"
+              />
+            ) : null}
             <View style={styles.imageDarkGradient} />
           </View>
 
@@ -108,12 +103,18 @@ export default function WelcomePage() {
               },
             ]}
           >
-            <View style={styles.cardImageContainer}>
-              <Image
-                source={{ uri: midLocation?.image_url || DEFAULT_HERO_MID }}
-                style={styles.cardCoverImage}
-                resizeMode="cover"
-              />
+            <View style={[styles.cardImageContainer, { backgroundColor: theme.surfaceMuted }]}>
+              {midLocation?.image_url ? (
+                <Image
+                  source={{ uri: midLocation.image_url }}
+                  style={styles.cardCoverImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.cardCoverImage, { alignItems: "center", justifyContent: "center" }]}>
+                  <Ionicons name="car-sport-outline" size={32} color={theme.textMuted} />
+                </View>
+              )}
               <View style={styles.imageDarkGradient} />
 
               {/* Overlaid Glass Chip */}
@@ -173,12 +174,18 @@ export default function WelcomePage() {
               },
             ]}
           >
-            <View style={styles.topCardImageContainer}>
-              <Image
-                source={{ uri: topLocation?.image_url || DEFAULT_HERO_TOP }}
-                style={styles.cardCoverImage}
-                resizeMode="cover"
-              />
+            <View style={[styles.topCardImageContainer, { backgroundColor: theme.surfaceMuted }]}>
+              {topLocation?.image_url ? (
+                <Image
+                  source={{ uri: topLocation.image_url }}
+                  style={styles.cardCoverImage}
+                  resizeMode="cover"
+                />
+              ) : (
+                <View style={[styles.cardCoverImage, { alignItems: "center", justifyContent: "center" }]}>
+                  <Ionicons name="flash-outline" size={36} color={theme.textMuted} />
+                </View>
+              )}
               <View style={styles.imageDarkGradient} />
 
               {/* Overlaid Frosted Glass Status Badge */}

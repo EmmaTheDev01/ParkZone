@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import {
   Dimensions,
   Modal,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -238,7 +239,7 @@ export default function ParkingPaymentQrModal({
                 Session Fee
               </Text>
               <Text style={[styles.infoValue, { color: theme.text, fontWeight: "700" }]}>
-                {(session.cost || 300).toLocaleString()} {session.currency || "RWF"}
+                {(session.cost ?? 0).toLocaleString()} {session.currency || "RWF"}
               </Text>
             </View>
 
@@ -353,7 +354,7 @@ const styles = StyleSheet.create({
   tokenText: {
     fontSize: 11.5,
     fontWeight: "600",
-    fontFamily: "monospace",
+    fontFamily: Platform.select({ ios: "Menlo", android: "monospace", default: "monospace" }),
   },
   sessionInfoBox: {
     width: "100%",

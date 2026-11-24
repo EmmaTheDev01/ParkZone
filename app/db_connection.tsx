@@ -9,12 +9,16 @@ const DbConnection = () => {
   const [status, setStatus] = useState("Checking database connection...");
   const [isConnected, setIsConnected] = useState(false);
 
+  const mountedRef = React.useRef(true);
+
   const checkConnection = async () => {
+    if (!mountedRef.current) return;
     setStatus("Checking database connection...");
     setIsConnected(false);
 
     try {
       const { error } = await supabase.auth.getSession();
+      if (!mountedRef.current) return;
 
       if (error) {
         setStatus(error.message);
@@ -24,12 +28,17 @@ const DbConnection = () => {
       setIsConnected(true);
       setStatus("Database connected successfully");
     } catch (error) {
+      if (!mountedRef.current) return;
       setStatus(error instanceof Error ? error.message : "Connection failed");
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     checkConnection();
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   return (

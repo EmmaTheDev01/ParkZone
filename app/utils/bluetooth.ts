@@ -150,6 +150,7 @@ export interface SerialChannel {
     service: string;
     writeCharacteristic: string;
     notifyCharacteristic: string;
+    writableWithoutResponse: boolean;
 }
 
 
@@ -157,23 +158,45 @@ export const findSerialChannel = async (deviceId: string): Promise<SerialChannel
     const ble = requireManager();
     for (const service of await ble.servicesForDevice(deviceId)) {
         let write: string | null = null;
+        let writableWithoutResponse = true;
         let notify: string | null = null;
         for (const c of await ble.characteristicsForDevice(deviceId, service.uuid)) {
-            if (!write && (c.isWritableWithResponse || c.isWritableWithoutResponse)) write = c.uuid;
+            if (!write && (c.isWritableWithResponse || c.isWritableWithoutResponse)) {
+                write = c.uuid;
+                writableWithoutResponse = Boolean(c.isWritableWithoutResponse);
+            }
             if (!notify && (c.isNotifiable || c.isIndicatable)) notify = c.uuid;
         }
-        if (write && notify) return { service: service.uuid, writeCharacteristic: write, notifyCharacteristic: notify };
+        if (write && notify) {
+            return {
+                service: service.uuid,
+                writeCharacteristic: write,
+                notifyCharacteristic: notify,
+                writableWithoutResponse,
+            };
+        }
     }
     throw new Error('No serial characteristics found on this device');
 };
 
 export const writeText = async (deviceId: string, channel: SerialChannel, text: string): Promise<void> => {
-    await requireManager().writeCharacteristicWithoutResponseForDevice(
-        deviceId,
-        channel.service,
-        channel.writeCharacteristic,
-        btoa(text),
-    );
+    const mgr = requireManager();
+    const encoded = btoa(text);
+    if (channel.writableWithoutResponse) {
+        await mgr.writeCharacteristicWithoutResponseForDevice(
+            deviceId,
+            channel.service,
+            channel.writeCharacteristic,
+            encoded,
+        );
+    } else {
+        await mgr.writeCharacteristicWithResponseForDevice(
+            deviceId,
+            channel.service,
+            channel.writeCharacteristic,
+            encoded,
+        );
+    }
 };
 
 

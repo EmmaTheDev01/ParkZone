@@ -86,20 +86,25 @@ const Permits = () => {
           text: "Submit Application",
           onPress: async () => {
             setApplying(true);
-            const res = await applyForPermit({
-              vehiclePlate: primaryPlate,
-              permitTitle: "Zone A & B Resident Permit",
-              zoneScope: "Kigali Municipal Zones A & B",
-            });
-            setApplying(false);
-            if (res.error) {
-              Alert.alert("Application Error", res.error);
-            } else {
-              await loadPermits();
-              Alert.alert(
-                "Application Submitted",
-                `Permit #${res.data?.permit_number} created in database for ${primaryPlate}.`
-              );
+            try {
+              const res = await applyForPermit({
+                vehiclePlate: primaryPlate,
+                permitTitle: "Zone A & B Resident Permit",
+                zoneScope: "Kigali Municipal Zones A & B",
+              });
+              if (res.error) {
+                Alert.alert("Application Error", res.error);
+              } else {
+                await loadPermits();
+                Alert.alert(
+                  "Application Submitted",
+                  `Permit #${res.data?.permit_number} created in database for ${primaryPlate}.`
+                );
+              }
+            } catch (err: any) {
+              Alert.alert("Application Error", err?.message || "Could not submit permit application.");
+            } finally {
+              setApplying(false);
             }
           },
         },
@@ -245,6 +250,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingBottom: 110,
   },
   emptyCard: {
     borderRadius: 20,

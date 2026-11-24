@@ -294,8 +294,8 @@ const EVChargers = () => {
     const firstAvailable = inZone.find((s) => !s.is_occupied);
     if (firstAvailable) {
       setSelectedBay(firstAvailable.space_number);
-    } else if (inZone[0]) {
-      setSelectedBay(inZone[0].space_number);
+    } else {
+      setSelectedBay("");
     }
   };
 
@@ -303,13 +303,22 @@ const EVChargers = () => {
     const filtered = selectedZone
       ? sheetSpaces.filter((s) => (s.zone_code || "EV Hub") === selectedZone)
       : sheetSpaces;
-    const mapped: ParkingLotSpot[] = filtered.map((s) => ({
-      id: s.id,
-      bayNumber: s.space_number,
-      isOccupied: s.is_occupied,
-      carColor: s.car_color || resolveParkedCarColor(`${sheetStation?.id}-${s.zone_code}-${s.space_number}`, s.current_vehicle_plate),
-      spotType: s.watt_power_kw ? `${s.watt_power_kw}kW` : s.space_type === "ev" ? "EV Charger" : "Bay",
-    }));
+    const mapped: ParkingLotSpot[] =
+      filtered.length > 0
+        ? filtered.map((s) => ({
+            id: s.id,
+            bayNumber: s.space_number,
+            isOccupied: s.is_occupied,
+            carColor: s.car_color || resolveParkedCarColor(`${sheetStation?.id}-${s.zone_code}-${s.space_number}`, s.current_vehicle_plate),
+            spotType: s.watt_power_kw ? `${s.watt_power_kw}kW` : s.space_type === "ev" ? "EV Charger" : "Bay",
+          }))
+        : (sheetStation?.chargers || []).map((c) => ({
+            id: c.id,
+            bayNumber: c.station_identifier,
+            isOccupied: c.status !== "available",
+            carColor: resolveParkedCarColor(`${sheetStation?.id}-${c.station_identifier}`, null),
+            spotType: c.max_output_kw ? `${c.max_output_kw}kW` : "EV Charger",
+          }));
     const mid = Math.ceil(mapped.length / 2);
     return {
       title: selectedZone || sheetStation?.name || "Charging Zone",
@@ -320,7 +329,7 @@ const EVChargers = () => {
       leftColumn: mapped.slice(0, mid),
       rightColumn: mapped.slice(mid),
     };
-  }, [sheetSpaces, selectedZone, sheetStation?.name]);
+  }, [sheetSpaces, selectedZone, sheetStation?.name, sheetStation?.id, sheetStation?.chargers]);
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -364,19 +373,19 @@ const EVChargers = () => {
   useEffect(() => {
     if (!selectedStation?.id) return;
     const unsubscribe = subscribeToEvChargersRealtime(selectedStation.id, (updatedCharger) => {
-      setStations((prev) =>
-        prev.map((st) => {
-          if (st.id === updatedCharger.location_id) {
-            return {
+      const mergeCharger = (st: StationItem): StationItem =>
+        st.id === updatedCharger.location_id
+          ? {
               ...st,
               chargers: st.chargers.map((c) =>
                 c.id === updatedCharger.id ? { ...c, ...updatedCharger } : c
               ),
-            };
-          }
-          return st;
-        })
-      );
+            }
+          : st;
+
+      setStations((prev) => prev.map(mergeCharger));
+      setSelectedStation((prev) => (prev ? mergeCharger(prev) : null));
+      setSheetStation((prev) => (prev ? mergeCharger(prev) : null));
     });
     return () => {
       unsubscribe();
@@ -626,7 +635,7 @@ const EVChargers = () => {
                     <MaterialCommunityIcons
                       name="ev-station"
                       size={17}
-                      color={isSelected ? "#FFFFFF" : theme.evGreen}
+                      color={isSelected ? (theme.isDark ? "#09090B" : "#FFFFFF") : theme.evGreen}
                     />
                   </View>
                   <View

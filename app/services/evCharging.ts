@@ -154,6 +154,9 @@ export interface ChargerBayDetails {
 }
 
 function toNum(v: any): number | null {
+    if (v === null || v === undefined || v === "" || typeof v === "boolean") {
+        return null;
+    }
     const n = Number(v);
     return Number.isFinite(n) ? n : null;
 }
